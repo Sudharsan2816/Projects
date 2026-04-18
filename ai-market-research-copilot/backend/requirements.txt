@@ -1,0 +1,28 @@
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+
+# Database
+sqlalchemy==2.0.36
+pydantic-settings==2.6.1
+
+# Document parsing
+pymupdf==1.24.14
+pandas==2.2.3
+openpyxl==3.1.5
+
+# Embeddings & vector search
+sentence-transformers==3.3.1
+faiss-cpu==1.9.0
+numpy==1.26.4
+
+# LLM clients
+google-generativeai==0.8.3
+httpx==0.28.1
+
+# PDF generation
+reportlab==4.2.5
+
+# Utilities
+python-dotenv==1.0.1
