@@ -14,11 +14,26 @@ class Settings(BaseSettings):
 
     # API Keys
     GEMINI_API_KEY: str = ""
+    NVIDIA_API_KEY: str = "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"
+    NVIDIA_BASE_URL: str = "https://integrate.api.nvidia.com/v1"
+
+    # NVIDIA models
+    NVIDIA_MODEL: str = "nvidia/llama-3.3-nemotron-super-49b-v1"    # P1: best available reasoning model
+    NVIDIA_EMBEDDING_MODEL: str = "nvidia/nv-embedqa-e5-v5"         # P3: retrieval embeddings (1024-dim)
+    NVIDIA_RERANKER_MODEL: str = "nvidia/nv-rerankqa-mistral-4b-v3" # P2: reranker (disabled if endpoint 404)
+
+    # Ollama (local fallback)
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "mistral"
 
-    # LLM preference: "gemini" or "ollama"
-    LLM_PROVIDER: str = "gemini"
+    # LLM preference: "nvidia", "gemini", or "ollama"
+    LLM_PROVIDER: str = "nvidia"
+
+    # Embedding provider: "nvidia" or "local"
+    EMBEDDING_PROVIDER: str = "nvidia"
+
+    # RAG retrieval settings
+    RERANKER_FETCH_K: int = 20  # candidates fetched from FAISS before reranking
 
     # Paths
     UPLOAD_DIR: Path = BASE_DIR / "data" / "uploads"

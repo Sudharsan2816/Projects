@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 from pathlib import Path
@@ -10,7 +11,7 @@ from components.sidebar import render_sidebar
 st.set_page_config(page_title="Chat with Docs", page_icon="💬", layout="wide")
 st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
-BACKEND = st.secrets.get("BACKEND_URL", "http://localhost:8000")
+BACKEND = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
 if "session_id" not in st.session_state:
     import uuid
@@ -103,30 +104,56 @@ if (send or pending) and (user_input or pending):
     if question:
         st.session_state.chat_history.append({"role": "user", "content": question})
 
-        with st.spinner("AI is thinking…"):
-            try:
-                res = requests.post(
-                    f"{BACKEND}/api/v1/chat/",
-                    json={"session_id": st.session_state.session_id, "message": question},
-                    timeout=90,
-                )
-                if res.status_code == 200:
-                    data = res.json()
-                    st.session_state.chat_history.append({
-                        "role": "assistant",
-                        "content": data["content"],
-                        "sources": data.get("sources", []),
-                    })
-                else:
-                    st.session_state.chat_history.append({
-                        "role": "assistant",
-                        "content": f"Error: {res.json().get('detail', 'Unknown error')}",
-                        "sources": [],
-                    })
-            except Exception as e:
-                st.session_state.chat_history.append({
-                    "role": "assistant",
-                    "content": f"Connection error: {e}",
-                    "sources": [],
-                })
+        # Render user message immediately
+        st.markdown(
+            f'<div class="chat-user"><b>You</b><br/>{question}</div>',
+            unsafe_allow_html=True,
+        )
+
+        # Stream the AI response token-by-token
+        answer_placeholder = st.empty()
+        streamed_tokens = []
+        sources = []
+        error = None
+
+        try:
+            with requests.post(
+                f"{BACKEND}/api/v1/chat/stream",
+                json={"session_id": st.session_state.session_id, "message": question},
+                stream=True,
+                timeout=120,
+            ) as res:
+                for raw_line in res.iter_lines():
+                    if not raw_line:
+                        continue
+                    line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
+                    if not line.startswith("data: "):
+                        continue
+                    payload = line[6:]
+                    try:
+                        data = __import__("json").loads(payload)
+                    except Exception:
+                        continue
+
+                    if "error" in data:
+                        error = data["error"]
+                        break
+                    if "token" in data:
+                        streamed_tokens.append(data["token"])
+                        answer_placeholder.markdown(
+                            f'<div class="chat-assistant"><b>AI</b><br/>{"".join(streamed_tokens).replace(chr(10),"<br/>")}</div>',
+                            unsafe_allow_html=True,
+                        )
+                    if data.get("done"):
+                        sources = data.get("sources", [])
+                        break
+        except Exception as e:
+            error = str(e)
+
+        full_answer = "".join(streamed_tokens) if not error else f"Connection error: {error}"
+        st.session_state.chat_history.append({
+            "role": "assistant",
+            "content": full_answer,
+            "sources": sources,
+        })
         st.rerun()

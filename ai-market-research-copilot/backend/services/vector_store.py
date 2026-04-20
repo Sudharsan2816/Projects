@@ -56,8 +56,18 @@ class FAISSVectorStore:
         embeddings = embed_texts(texts)
         dim = embeddings.shape[1]
 
+        # If an existing index has a different dimension (e.g. switched embedding
+        # provider from local 384-dim to NVIDIA 1024-dim), rebuild from scratch.
+        if self.index is not None and self.index.d != dim:
+            logger.warning(
+                f"[{self.session_id}] Embedding dim changed "
+                f"({self.index.d} → {dim}). Rebuilding index."
+            )
+            self.index = None
+            self.metadata = []
+
         if self.index is None:
-            self.index = faiss.IndexFlatIP(dim)  # Inner-product (cosine on normalised)
+            self.index = faiss.IndexFlatIP(dim)
 
         self.index.add(embeddings)
         self.metadata.extend(chunks)

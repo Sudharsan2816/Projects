@@ -9,7 +9,7 @@ COPY frontend/ ./
 
 # Streamlit config
 RUN mkdir -p .streamlit
-RUN echo '[server]\nheadless = true\nport = 8501\naddress = "0.0.0.0"\n\n[theme]\nbase = "dark"' > .streamlit/config.toml
+RUN printf '[server]\nheadless = true\nport = 8501\naddress = "0.0.0.0"\n\n[browser]\ngatherUsageStats = false\n\n[theme]\nbase = "dark"\n' > .streamlit/config.toml
 
 EXPOSE 8501
 

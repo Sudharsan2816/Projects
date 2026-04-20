@@ -1,11 +1,12 @@
 import json
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from backend.core.database import get_db
 from backend.models.db_models import ChatMessage
 from backend.models.schemas import ChatRequest, ChatResponse
-from backend.services.chat_engine import chat
+from backend.services.chat_engine import chat, chat_stream
 from backend.core.logging import get_logger
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
@@ -51,6 +52,62 @@ async def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
     db.commit()
 
     return ChatResponse(role="assistant", content=answer, sources=sources)
+
+
+@router.post("/stream")
+async def chat_stream_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
+    """SSE streaming endpoint — yields text chunks then a final JSON sources line."""
+    history_rows = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id == request.session_id)
+        .order_by(ChatMessage.created_at.asc())
+        .limit(20)
+        .all()
+    )
+    history = [{"role": m.role, "content": m.content} for m in history_rows]
+    session_id = request.session_id
+    user_message = request.message
+
+    def event_stream():
+        full_answer_parts = []
+        sources = []
+        try:
+            for chunk, src in chat_stream(
+                session_id=session_id,
+                user_message=user_message,
+                history=history,
+            ):
+                if chunk:
+                    full_answer_parts.append(chunk)
+                    yield f"data: {json.dumps({'token': chunk})}\n\n"
+                if src is not None:
+                    sources.extend(src)
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            return
+
+        full_answer = "".join(full_answer_parts)
+
+        # Use a fresh DB session for persistence — the request-scoped one is closed by now
+        from backend.core.database import SessionLocal
+        persist_db = SessionLocal()
+        try:
+            persist_db.add(ChatMessage(session_id=session_id, role="user", content=user_message))
+            persist_db.add(ChatMessage(
+                session_id=session_id,
+                role="assistant",
+                content=full_answer,
+                sources=json.dumps(sources) if sources else None,
+            ))
+            persist_db.commit()
+        except Exception as e:
+            logger.error(f"Stream persist failed: {e}")
+        finally:
+            persist_db.close()
+
+        yield f"data: {json.dumps({'done': True, 'sources': sources})}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @router.get("/{session_id}/history")

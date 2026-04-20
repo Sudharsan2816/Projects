@@ -1,7 +1,7 @@
 from typing import List, Tuple, Dict, Any
 
 from .vector_store import FAISSVectorStore
-from .llm import generate
+from .llm import generate, rerank
 from backend.core.config import get_settings
 from backend.core.logging import get_logger
 
@@ -38,7 +38,9 @@ def rag_query(
     Returns (answer, list_of_source_dicts)
     """
     store = FAISSVectorStore(session_id)
-    results = store.search(query, top_k=top_k or settings.TOP_K_RESULTS)
+    # Fetch more candidates than needed so the reranker has room to work
+    fetch_k = max(settings.RERANKER_FETCH_K, top_k or settings.TOP_K_RESULTS)
+    results = store.search(query, top_k=fetch_k)
 
     if not results:
         logger.warning(f"[{session_id}] No chunks found for query: {query[:80]}")
@@ -48,6 +50,9 @@ def rag_query(
             system_prompt,
         )
         return answer, []
+
+    # P2: Rerank candidates → keep only top_k most relevant
+    results = rerank(query, results, top_k=top_k or settings.TOP_K_RESULTS)
 
     context = build_context(results)
 

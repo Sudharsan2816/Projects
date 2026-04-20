@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 import time
@@ -12,7 +13,7 @@ from components.sidebar import render_sidebar
 st.set_page_config(page_title="Generate Report", page_icon="🔍", layout="wide")
 st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
-BACKEND = st.secrets.get("BACKEND_URL", "http://localhost:8000")
+BACKEND = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
 if "session_id" not in st.session_state:
     import uuid

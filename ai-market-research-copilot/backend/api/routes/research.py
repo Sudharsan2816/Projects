@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 
-from backend.core.database import get_db
+from backend.core.database import get_db, SessionLocal
 from backend.models.db_models import Session as DBSession, Report
 from backend.models.schemas import ResearchRequest, ReportResponse, StatusResponse
 from backend.services.research_engine import generate_full_report
@@ -14,19 +14,19 @@ router = APIRouter(prefix="/research", tags=["Research"])
 logger = get_logger(__name__)
 
 
-def _run_report(session_id: str, topic: str, report_id: int, db: Session):
-    """Background task: generate full report and update DB."""
-    report = db.query(Report).filter(Report.id == report_id).first()
-    if not report:
-        return
-
+def _run_report(session_id: str, topic: str, report_id: int):
+    """Background task: opens its own DB session so it isn't bound to the closed request session."""
+    db = SessionLocal()
     try:
+        report = db.query(Report).filter(Report.id == report_id).first()
+        if not report:
+            return
+
         report.status = "generating"
         db.commit()
 
         data = generate_full_report(session_id, topic)
 
-        # Generate PDF
         pdf_path = generate_pdf_report(
             session_id=session_id,
             topic=topic,
@@ -35,6 +35,7 @@ def _run_report(session_id: str, topic: str, report_id: int, db: Session):
             pricing_insights=data["pricing_insights"],
             market_trends=data["market_trends"],
             swot_analysis=data["swot_analysis"],
+            data_source=data.get("data_source", "web_search+llm"),
         )
 
         report.executive_summary = data["executive_summary"]
@@ -48,9 +49,16 @@ def _run_report(session_id: str, topic: str, report_id: int, db: Session):
         logger.info(f"[{session_id}] Report {report_id} completed")
 
     except Exception as e:
-        logger.error(f"[{session_id}] Report {report_id} failed: {e}")
-        report.status = "failed"
-        db.commit()
+        logger.error(f"[{session_id}] Report {report_id} failed: {e}", exc_info=True)
+        try:
+            report = db.query(Report).filter(Report.id == report_id).first()
+            if report:
+                report.status = "failed"
+                db.commit()
+        except Exception:
+            pass
+    finally:
+        db.close()
 
 
 @router.post("/generate", response_model=StatusResponse)
@@ -82,7 +90,7 @@ async def generate_report(
     db.refresh(report)
 
     background_tasks.add_task(
-        _run_report, request.session_id, request.topic, report.id, db
+        _run_report, request.session_id, request.topic, report.id
     )
 
     return StatusResponse(

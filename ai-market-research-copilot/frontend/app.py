@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 import uuid
@@ -12,7 +13,7 @@ st.set_page_config(
 )
 st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
-BACKEND = st.secrets.get("BACKEND_URL", "http://localhost:8000")
+BACKEND = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
 # ── Session bootstrap ─────────────────────────────────────────────────────────
 if "session_id" not in st.session_state:

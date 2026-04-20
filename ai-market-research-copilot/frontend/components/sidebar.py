@@ -58,13 +58,16 @@ def render_sidebar():
         with st.expander("⚙️ Settings"):
             st.markdown("""
             Configure in `.env` file:
-            - `GEMINI_API_KEY`
-            - `LLM_PROVIDER` (gemini/ollama)
-            - `OLLAMA_BASE_URL`
+            - `NVIDIA_API_KEY`
+            - `NVIDIA_MODEL` (LLM)
+            - `NVIDIA_EMBEDDING_MODEL`
+            - `NVIDIA_RERANKER_MODEL`
+            - `LLM_PROVIDER` (nvidia/gemini/ollama)
+            - `EMBEDDING_PROVIDER` (nvidia/local)
             """)
 
         st.markdown("""
         <div style="position:absolute; bottom:16px; left:0; right:0; text-align:center; font-size:0.72rem; color:#37474f;">
-            Built with FastAPI · FAISS · Gemini
+            Built with FastAPI · FAISS · NVIDIA NIM
         </div>
         """, unsafe_allow_html=True)
