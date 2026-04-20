@@ -25,14 +25,31 @@ render_sidebar()
 
 st.markdown("""
 <div class="app-header">
-    <div class="app-title">💬 Chat with Your Documents</div>
-    <div class="app-subtitle">Ask questions about uploaded documents — AI answers with source citations</div>
+    <div class="app-title">Conversation Intelligence</div>
+    <div class="app-subtitle">Ask high-value questions over your documents and get cite-backed answers in real time.</div>
 </div>
 """, unsafe_allow_html=True)
 
 # ── Guard: no documents ───────────────────────────────────────────────────────
 if not st.session_state.uploaded_docs:
     st.warning("No documents indexed yet. Upload documents first for grounded answers.")
+
+top_a, top_b, top_c = st.columns(3)
+with top_a:
+    st.markdown(
+        f'<div class="stat-card"><div class="stat-number">{len(st.session_state.uploaded_docs)}</div><div class="stat-label">Indexed Docs</div></div>',
+        unsafe_allow_html=True,
+    )
+with top_b:
+    st.markdown(
+        f'<div class="stat-card"><div class="stat-number">{len(st.session_state.chat_history)}</div><div class="stat-label">Messages</div></div>',
+        unsafe_allow_html=True,
+    )
+with top_c:
+    st.markdown(
+        '<div class="stat-card"><div class="stat-number">LIVE</div><div class="stat-label">Streaming Mode</div></div>',
+        unsafe_allow_html=True,
+    )
 
 # ── Suggested questions ───────────────────────────────────────────────────────
 st.markdown("**Suggested questions:**")
@@ -140,8 +157,9 @@ if (send or pending) and (user_input or pending):
                         break
                     if "token" in data:
                         streamed_tokens.append(data["token"])
+                        streamed_text = "".join(streamed_tokens).replace(chr(10), "<br/>")
                         answer_placeholder.markdown(
-                            f'<div class="chat-assistant"><b>AI</b><br/>{"".join(streamed_tokens).replace(chr(10),"<br/>")}</div>',
+                            f'<div class="chat-assistant"><b>AI</b><br/>{streamed_text}<span class="typing-caret">▍</span></div>',
                             unsafe_allow_html=True,
                         )
                     if data.get("done"):

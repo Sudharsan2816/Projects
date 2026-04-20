@@ -28,7 +28,7 @@ def chat(
     # Build history context string
     history_text = ""
     if history:
-        recent = history[-6:]  # keep last 3 exchanges
+        recent = history[-settings.CHAT_HISTORY_CONTEXT_LIMIT :]  # keep recent context window
         for msg in recent:
             role = msg.get("role", "user").capitalize()
             history_text += f"{role}: {msg.get('content', '')}\n"
@@ -60,7 +60,7 @@ def chat_stream(
     """
     history_text = ""
     if history:
-        for msg in history[-6:]:
+        for msg in history[-settings.CHAT_HISTORY_CONTEXT_LIMIT :]:
             history_text += f"{msg.get('role','user').capitalize()}: {msg.get('content','')}\n"
 
     full_query = (

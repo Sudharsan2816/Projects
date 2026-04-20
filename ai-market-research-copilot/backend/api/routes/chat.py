@@ -8,9 +8,11 @@ from backend.models.db_models import ChatMessage
 from backend.models.schemas import ChatRequest, ChatResponse
 from backend.services.chat_engine import chat, chat_stream
 from backend.core.logging import get_logger
+from backend.core.config import get_settings
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 logger = get_logger(__name__)
+settings = get_settings()
 
 
 @router.post("/", response_model=ChatResponse)
@@ -20,7 +22,7 @@ async def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
         db.query(ChatMessage)
         .filter(ChatMessage.session_id == request.session_id)
         .order_by(ChatMessage.created_at.asc())
-        .limit(20)
+        .limit(settings.CHAT_HISTORY_DB_LIMIT)
         .all()
     )
     history = [{"role": m.role, "content": m.content} for m in history_rows]
@@ -61,7 +63,7 @@ async def chat_stream_endpoint(request: ChatRequest, db: Session = Depends(get_d
         db.query(ChatMessage)
         .filter(ChatMessage.session_id == request.session_id)
         .order_by(ChatMessage.created_at.asc())
-        .limit(20)
+        .limit(settings.CHAT_HISTORY_DB_LIMIT)
         .all()
     )
     history = [{"role": m.role, "content": m.content} for m in history_rows]

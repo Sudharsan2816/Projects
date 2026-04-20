@@ -49,4 +49,9 @@ def health():
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "llm_provider": settings.LLM_PROVIDER,
+        "token_limits": {
+            "max_output_tokens": settings.LLM_MAX_OUTPUT_TOKENS,
+            "chat_history_db_limit": settings.CHAT_HISTORY_DB_LIMIT,
+            "chat_context_messages": settings.CHAT_HISTORY_CONTEXT_LIMIT,
+        },
     }

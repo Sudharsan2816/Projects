@@ -26,7 +26,7 @@ def _gemini_generate(prompt: str, system: str = "") -> str:
         config=types.GenerateContentConfig(
             system_instruction=system or "You are an expert market research analyst.",
             temperature=0.4,
-            max_output_tokens=4096,
+            max_output_tokens=settings.LLM_MAX_OUTPUT_TOKENS,
         ),
     )
     return response.text.strip()
@@ -46,7 +46,7 @@ def _nvidia_generate(prompt: str, system: str = "") -> str:
             {"role": "user", "content": prompt},
         ],
         temperature=0.4,
-        max_tokens=4096,
+        max_tokens=settings.LLM_MAX_OUTPUT_TOKENS,
     )
     return response.choices[0].message.content.strip()
 
@@ -59,7 +59,7 @@ def _ollama_generate(prompt: str, system: str = "") -> str:
         "prompt": prompt,
         "system": system or "You are an expert market research analyst.",
         "stream": False,
-        "options": {"temperature": 0.4, "num_predict": 4096},
+        "options": {"temperature": 0.4, "num_predict": settings.LLM_MAX_OUTPUT_TOKENS},
     }
     try:
         response = httpx.post(
@@ -194,7 +194,7 @@ def generate_stream(prompt: str, system: str = ""):
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.4,
-                max_tokens=4096,
+                max_tokens=settings.LLM_MAX_OUTPUT_TOKENS,
                 stream=True,
             )
             for chunk in stream:

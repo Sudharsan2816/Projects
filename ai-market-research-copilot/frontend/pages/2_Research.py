@@ -2,7 +2,6 @@ import os
 import streamlit as st
 import requests
 import time
-import json
 from pathlib import Path
 import sys
 
@@ -29,10 +28,36 @@ render_sidebar()
 
 st.markdown("""
 <div class="app-header">
-    <div class="app-title">🔍 Generate Market Research Report</div>
-    <div class="app-subtitle">AI-powered analysis: competitors · pricing · trends · SWOT</div>
+    <div class="app-title">Generate Strategic Intelligence</div>
+    <div class="app-subtitle">Craft a market report with competitor mapping, pricing signals, trend analysis, and SWOT.</div>
 </div>
 """, unsafe_allow_html=True)
+
+health_col, guide_col = st.columns([1, 2], gap="medium")
+with health_col:
+    st.markdown(
+        f"""
+        <div class="research-card">
+            <div style="font-size:0.74rem; letter-spacing:0.1em; text-transform:uppercase; color:#9fb0df;">Context</div>
+            <div style="margin-top:8px; font-size:1.35rem; font-weight:800; color:#eef2ff;">{len(st.session_state.uploaded_docs)} docs</div>
+            <div style="font-size:0.83rem; color:#9fb0df; margin-top:4px;">Session indexed files</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+with guide_col:
+    st.markdown(
+        """
+        <div class="research-card">
+            <div style="font-size:1rem; font-weight:800; color:#eef2ff;">How to get better output</div>
+            <div style="font-size:0.86rem; color:#9fb0df; margin-top:6px;">
+                Use a specific topic with geography/timeframe, then add constraints like target segment,
+                pricing tier, or customer persona.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # ── Topic Input ───────────────────────────────────────────────────────────────
 st.markdown("### Define Your Research Topic")
@@ -46,7 +71,7 @@ with col1:
     )
 
 with col2:
-    st.markdown("<br/>", unsafe_allow_html=True)
+    st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
     generate_btn = st.button("🚀 Generate Report", use_container_width=True, type="primary")
 
 # ── Suggested topics ──────────────────────────────────────────────────────────
@@ -134,8 +159,13 @@ if generate_btn and topic.strip():
 
             st.session_state.report_data = report
             st.success("✅ Report generated! Navigate to **View Report** to explore it.")
-            if st.button("📊 View Report Now →"):
-                st.switch_page("pages/3_Report.py")
+            jump_a, jump_b = st.columns(2)
+            with jump_a:
+                if st.button("📊 View Report Now →", use_container_width=True):
+                    st.switch_page("pages/3_Report.py")
+            with jump_b:
+                if st.button("💬 Open Chat with Report Context →", use_container_width=True):
+                    st.switch_page("pages/4_Chat.py")
 
     except requests.RequestException as e:
         st.error(f"Backend error: {e}")

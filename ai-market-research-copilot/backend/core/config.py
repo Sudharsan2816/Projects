@@ -34,6 +34,8 @@ class Settings(BaseSettings):
 
     # RAG retrieval settings
     RERANKER_FETCH_K: int = 20  # candidates fetched from FAISS before reranking
+    CHAT_HISTORY_DB_LIMIT: int = 20
+    CHAT_HISTORY_CONTEXT_LIMIT: int = 6
 
     # Paths
     UPLOAD_DIR: Path = BASE_DIR / "data" / "uploads"
@@ -56,6 +58,9 @@ class Settings(BaseSettings):
 
     # File upload limits (MB)
     MAX_FILE_SIZE_MB: int = 50
+
+    # Token usage limits
+    LLM_MAX_OUTPUT_TOKENS: int = 4096
 
     class Config:
         env_file = ".env"

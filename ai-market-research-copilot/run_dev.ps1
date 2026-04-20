@@ -20,11 +20,11 @@ Stop-ProcessOnPort $FrontendPort
 
 # 2. Start Backend (FastAPI)
 Write-Host "Starting Backend on port $BackendPort..." -ForegroundColor Green
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd backend; uvicorn main:app --reload --port $BackendPort" -WindowStyle Normal
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location 'C:\Users\Welcome\Desktop\Projects\ai-market-research-copilot'; python -m uvicorn backend.main:app --reload --port $BackendPort" -WindowStyle Normal
 
 # 3. Start Frontend (Streamlit)
 Write-Host "Starting Frontend on port $FrontendPort..." -ForegroundColor Green
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; streamlit run app.py" -WindowStyle Normal
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location 'C:\Users\Welcome\Desktop\Projects\ai-market-research-copilot'; streamlit run frontend/app.py" -WindowStyle Normal
 
 Write-Host "Done! Backend and Frontend are starting in separate windows." -ForegroundColor Cyan
 Write-Host "Backend: http://localhost:$BackendPort"

@@ -23,10 +23,23 @@ render_sidebar()
 
 st.markdown("""
 <div class="app-header">
-    <div class="app-title">📁 Upload Documents</div>
-    <div class="app-subtitle">Upload PDFs, CSVs, or TXT files to build your research knowledge base</div>
+    <div class="app-title">Bring Your Market Data</div>
+    <div class="app-subtitle">Upload documents to build a grounded knowledge base for your AI reports and chat answers.</div>
 </div>
 """, unsafe_allow_html=True)
+
+docs = st.session_state.uploaded_docs
+total_chunks = sum(d.get("chunk_count", 0) for d in docs)
+stat_a, stat_b, stat_c = st.columns(3)
+with stat_a:
+    st.markdown(f'<div class="stat-card"><div class="stat-number">{len(docs)}</div><div class="stat-label">Indexed Files</div></div>', unsafe_allow_html=True)
+with stat_b:
+    st.markdown(f'<div class="stat-card"><div class="stat-number">{total_chunks}</div><div class="stat-label">Knowledge Chunks</div></div>', unsafe_allow_html=True)
+with stat_c:
+    st.markdown(
+        f'<div class="stat-card"><div class="stat-number">{"READY" if docs else "EMPTY"}</div><div class="stat-label">Research State</div></div>',
+        unsafe_allow_html=True,
+    )
 
 # ── Upload area ───────────────────────────────────────────────────────────────
 st.markdown("### Select files to upload")
@@ -39,6 +52,18 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files:
     st.markdown(f"**{len(uploaded_files)} file(s) selected**")
+    file_cols = st.columns(2)
+    for i, file in enumerate(uploaded_files):
+        with file_cols[i % 2]:
+            st.markdown(
+                f"""
+                <div class="research-card" style="padding:0.8rem 0.9rem;">
+                    <div style="font-weight:700; color:#ebf1ff;">📄 {file.name}</div>
+                    <div style="font-size:0.82rem; color:#9fb0df;">{file.size/1024:.1f} KB</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     if st.button("🚀 Index All Files", use_container_width=False):
         progress = st.progress(0, text="Starting...")
@@ -64,12 +89,12 @@ if uploaded_files:
                     data = response.json()
                     st.session_state.session_id = data["session_id"]
                     results.append({"status": "success", **data})
-                    # Update sidebar doc list
-                    st.session_state.uploaded_docs.append({
-                        "filename": data["filename"],
-                        "chunk_count": data["chunk_count"],
-                        "file_type": data["file_type"],
-                    })
+                    if not any(doc["filename"] == data["filename"] for doc in st.session_state.uploaded_docs):
+                        st.session_state.uploaded_docs.append({
+                            "filename": data["filename"],
+                            "chunk_count": data["chunk_count"],
+                            "file_type": data["file_type"],
+                        })
                 else:
                     results.append({"status": "error", "filename": file.name, "detail": response.json().get("detail", "Unknown error")})
             except Exception as e:
@@ -112,14 +137,21 @@ if uploaded_files:
 if st.session_state.uploaded_docs:
     st.markdown("---")
     st.markdown("### Indexed in Current Session")
-    cols = st.columns(3)
+    cols = st.columns(2)
     for i, doc in enumerate(st.session_state.uploaded_docs):
-        with cols[i % 3]:
+        file_type = doc["file_type"]
+        if file_type == "pdf":
+            doc_icon = "📄"
+        elif file_type == "csv":
+            doc_icon = "📊"
+        else:
+            doc_icon = "📝"
+        with cols[i % 2]:
             st.markdown(f"""
             <div class="research-card">
-                <div style="font-size:1.3rem;">{'📄' if doc['file_type']=='pdf' else '📊' if doc['file_type']=='csv' else '📝'}</div>
-                <div style="font-weight:600; color:#e3f2fd; margin-top:8px;">{doc['filename']}</div>
-                <div style="font-size:0.8rem; color:#78909c;">{doc['chunk_count']} chunks · {doc['file_type'].upper()}</div>
+                <div style="font-size:1.3rem;">{doc_icon}</div>
+                <div style="font-weight:600; color:#f0f4ff; margin-top:8px;">{doc['filename']}</div>
+                <div style="font-size:0.8rem; color:#9fb0df;">{doc['chunk_count']} chunks · {doc['file_type'].upper()}</div>
             </div>
             """, unsafe_allow_html=True)
 

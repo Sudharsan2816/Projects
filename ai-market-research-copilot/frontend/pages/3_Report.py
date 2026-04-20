@@ -26,8 +26,8 @@ render_sidebar()
 
 st.markdown("""
 <div class="app-header">
-    <div class="app-title">📊 Market Research Report</div>
-    <div class="app-subtitle">AI-generated analysis with competitor intelligence, pricing insights, trends & SWOT</div>
+    <div class="app-title">Market Intelligence Board</div>
+    <div class="app-subtitle">Explore executive synthesis, competitors, pricing dynamics, trend momentum, and SWOT in one place.</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -41,6 +41,25 @@ if not report:
 
 topic = report.get("topic", "")
 st.markdown(f"## {topic}")
+
+competitors_count = len(report.get("competitors") or [])
+pricing_count = len(report.get("pricing_insights") or [])
+trends_count = len(report.get("market_trends") or [])
+swot = report.get("swot_analysis") or {}
+swot_count = sum(len(swot.get(k, [])) for k in ["strengths", "weaknesses", "opportunities", "threats"])
+
+metric_cols = st.columns(4)
+for col, value, label in [
+    (metric_cols[0], competitors_count, "Competitors"),
+    (metric_cols[1], pricing_count, "Pricing Segments"),
+    (metric_cols[2], trends_count, "Trends"),
+    (metric_cols[3], swot_count, "SWOT Signals"),
+]:
+    with col:
+        st.markdown(
+            f'<div class="stat-card"><div class="stat-number">{value}</div><div class="stat-label">{label}</div></div>',
+            unsafe_allow_html=True,
+        )
 
 # ── Download PDF ───────────────────────────────────────────────────────────────
 report_id = report.get("id")
@@ -60,6 +79,17 @@ with col_dl:
                 st.error("PDF not ready yet.")
         except Exception as e:
             st.error(f"Download error: {e}")
+with col_refresh:
+    st.markdown(
+        """
+        <div class="research-card" style="padding:0.75rem 1rem;">
+            <div style="font-size:0.84rem; color:#9fb0df;">
+                Download the latest rendered PDF or continue exploring this interactive board.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # ── Tabs ───────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4 = st.tabs([
