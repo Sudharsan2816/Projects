@@ -1,5 +1,7 @@
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 
 from backend.core.config import get_settings
@@ -55,3 +57,10 @@ def health():
             "chat_context_messages": settings.CHAT_HISTORY_CONTEXT_LIMIT,
         },
     }
+
+
+# Serve the Marketscope React UI at root.
+# Mount AFTER all API routes so /api/v1/... and /health take priority.
+_UI_DIR = Path(__file__).parent.parent / "ui"
+if _UI_DIR.exists():
+    app.mount("/", StaticFiles(directory=str(_UI_DIR), html=True), name="ui")
