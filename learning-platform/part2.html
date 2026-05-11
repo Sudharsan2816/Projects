@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Platform Part 2 - LangGraph, Claude, PyGithub</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+<style>
+/* Same CSS as part 1 - this file is meant to be merged into index.html */
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#22272e;--t1:#e6edf3;--t2:#8b949e;--t3:#6e7681;--blue:#58a6ff;--green:#3fb950;--orange:#d29922;--purple:#bc8cff;--red:#f85149;--cyan:#39d353;--border:#30363d;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--t1);max-width:900px;margin:0 auto;padding:2rem;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:1.5rem;overflow:hidden;}
+.card-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.5rem;}
+.card-header h2{font-size:1rem;color:var(--t1);}
+.card-body{padding:1.2rem;}
+.card-body p,.card-body li{color:var(--t2);line-height:1.75;}
+.card-body strong{color:var(--t1);}
+.card-body code{background:var(--bg4);color:var(--orange);padding:0.1rem 0.4rem;border-radius:3px;font-family:monospace;font-size:0.85em;}
+.card-body ul{padding-left:1.5rem;margin-bottom:0.8rem;}
+.code-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:1.5rem;overflow:hidden;}
+.code-header{padding:0.7rem 1.2rem;background:var(--bg3);border-bottom:1px solid var(--border);font-size:0.82rem;color:var(--t2);}
+.code-card pre{margin:0!important;border-radius:0!important;}
+.code-card pre code{font-size:0.82rem!important;}
+.analogy{background:linear-gradient(135deg,#0d1f35,#0d2613);border:1px solid #1a3a5c;border-radius:10px;padding:1.2rem;margin-bottom:1.5rem;}
+.analogy-label{font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:0.5rem;}
+.analogy p{color:#a8c9ef;line-height:1.7;}
+.callout{padding:0.8rem 1rem;border-radius:7px;margin-bottom:1rem;font-size:0.87rem;line-height:1.6;}
+.callout.tip{background:#0d2613;border-left:3px solid var(--green);color:#9ae6a0;}
+.callout.info{background:#0d1f35;border-left:3px solid var(--blue);color:#a8c9ef;}
+.callout.warning{background:#2a1f00;border-left:3px solid var(--orange);color:#e6c88a;}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85rem;}
+th{background:var(--bg3);color:var(--t2);padding:0.6rem 0.8rem;text-align:left;border-bottom:2px solid var(--border);font-weight:600;}
+td{padding:0.55rem 0.8rem;border-bottom:1px solid var(--border);color:var(--t2);}
+td:first-child{color:var(--t1);font-weight:600;}
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:0.3rem;margin:1rem 0;}
+.flow-node{background:var(--bg3);border:1px solid var(--blue);border-radius:6px;padding:0.4rem 0.8rem;font-size:0.8rem;color:var(--blue);font-weight:600;}
+.flow-arrow{color:var(--t3);font-size:1.1rem;}
+.section-title{font-size:1.8rem;color:var(--t1);margin:2rem 0 0.5rem;}
+.section-intro{color:var(--t2);margin-bottom:1.5rem;line-height:1.7;}
+.math-block{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:1rem;margin:1rem 0;font-family:monospace;font-size:0.85rem;color:var(--orange);text-align:center;}
+.quiz-q{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.2rem;margin-bottom:1rem;}
+.q-text{font-size:0.9rem;color:var(--t1);margin-bottom:0.8rem;font-weight:600;}
+.options{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.6rem;}
+.opt{display:flex;align-items:flex-start;gap:0.6rem;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:6px;}
+.opt label{font-size:0.85rem;color:var(--t2);cursor:pointer;}
+.check-btn{padding:0.4rem 1rem;background:var(--blue);color:#000;border:none;border-radius:5px;font-size:0.82rem;font-weight:700;cursor:pointer;}
+.feedback{display:none;margin-top:0.6rem;padding:0.7rem 0.9rem;border-radius:6px;font-size:0.83rem;}
+.feedback.correct{background:#0d2613;border:1px solid var(--green);color:#9ae6a0;}
+.feedback.wrong{background:#2a0d0d;border:1px solid var(--red);color:#f0a0a0;}
+</style>
+</head>
+<body>
+
+<!-- ==================== LANGGRAPH ==================== -->
+<h1 class="section-title">&#127760; LangGraph &mdash; State Machines for AI Pipelines</h1>
+<p class="section-intro">LangGraph is the most architecturally interesting library in your Code Review Agent. It turns your pipeline from a chain of function calls into a formal state machine that can be composed, branched, and extended without touching existing code.</p>
+
+<div class="card">
+  <div class="card-header"><h2>What Problem Does LangGraph Solve?</h2></div>
+  <div class="card-body">
+    <p>Without LangGraph, you have <code>ReviewService.run_review()</code> &mdash; a linear function that calls steps 1-5 in order. It works, but:</p>
+    <ul>
+      <li>Adding a new step requires editing the existing function (breaks Open/Closed principle)</li>
+      <li>Error handling is scattered with try/except in each step</li>
+      <li>You cannot run steps in parallel (e.g., run security scan + LLM review simultaneously)</li>
+      <li>You cannot easily add conditional branches (e.g., if diff &gt; 10,000 chars, use a different prompt)</li>
+    </ul>
+    <p>LangGraph models the pipeline as a <strong>directed graph</strong> where each node is a pure function. Edges define the flow. The compiled graph is a runnable object you invoke with initial state.</p>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">app/agents/review_agent.py &mdash; State definition</div>
+<pre><code class="language-python">from __future__ import annotations
+import operator
+from typing import Annotated, Any, TypedDict
+from langgraph.graph import END, StateGraph
+
+# AgentState is a TypedDict &mdash; it defines the shape of the shared
+# mutable state that ALL nodes read from and write to.
+class AgentState(TypedDict):
+    repo: str                    # read-only: set at invocation
+    pr_number: int               # read-only
+    post_comment: bool           # read-only
+    pr_diff: PRDiff | None       # written by fetch_diff_node
+    raw_llm_response: str        # written by llm_review_node
+    parsed_data: dict[str, Any]  # written by parse_response_node
+    review: CodeReview | None    # written by build_review_node
+    review_id: str               # written by persist_review_node
+    error: str                   # written by any node on failure
+
+    # Annotated[list[str], operator.add] is special LangGraph syntax.
+    # It means: when a node returns {"logs": ["new entry"]},
+    # LangGraph APPENDS to the existing list (reducer = operator.add)
+    # instead of REPLACING it. Without this, each node would overwrite
+    # the previous logs.
+    logs: Annotated[list[str], operator.add]</code></pre>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Nodes &mdash; Pure Functions That Return Partial State</h2></div>
+  <div class="card-body">
+    <p>Every node receives the full <code>AgentState</code> and returns a <strong>partial dict</strong> of only the fields it wants to update. LangGraph merges this with the existing state.</p>
+    <p>The key pattern in your code: every node first checks <code>if state.get("error")</code> and returns <code>{}</code> immediately. This is the <strong>short-circuit pattern</strong> &mdash; once any node fails, all subsequent nodes silently skip.</p>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">All 6 nodes from review_agent.py with explanations</div>
+<pre><code class="language-python">async def fetch_diff_node(state: AgentState) -&gt; dict:
+    """Node 1: Fetch PR diff from GitHub."""
+    try:
+        github = GitHubService()
+        pr_diff = github.fetch_pr_diff(state["repo"], state["pr_number"])
+        # Return ONLY the fields this node updates
+        return {"pr_diff": pr_diff, "logs": [f"Fetched diff for PR #{state['pr_number']}"]}
+    except Exception as exc:
+        return {"error": str(exc), "logs": [f"fetch_diff failed: {exc}"]}
+
+async def llm_review_node(state: AgentState) -&gt; dict:
+    """Node 2: Send diff to LLM."""
+    if state.get("error"):   # Short-circuit: skip if earlier node failed
+        return {}
+    try:
+        llm = _get_llm_client()    # Factory: returns Claude or OpenAI
+        prompt = _build_prompt(state["pr_diff"])
+        raw = await llm.generate_review(prompt)  # async API call
+        return {"raw_llm_response": raw, "logs": ["LLM review generated"]}
+    except Exception as exc:
+        return {"error": str(exc), "logs": [f"llm_review failed: {exc}"]}
+
+async def parse_response_node(state: AgentState) -&gt; dict:
+    """Node 3: Parse JSON from LLM response."""
+    if state.get("error"): return {}
+    # ...
+
+async def build_review_node(state: AgentState) -&gt; dict:
+    """Node 4: Build the CodeReview Pydantic model."""
+    if state.get("error"): return {}
+    data = state["parsed_data"]
+    review = CodeReview(
+        repo=state["repo"],
+        scores=Scores(
+            # Clamp to valid range 1-10 defensively
+            quality=max(1, min(10, int(data["scores"]["quality"]))),
+        ),
+        # ...
+    )
+    return {"review": review, "logs": ["CodeReview model built"]}
+
+async def persist_review_node(state: AgentState) -&gt; dict:
+    """Node 5: Save to MongoDB."""
+    if state.get("error") or not state.get("review"): return {}
+    db = DatabaseService()
+    review_id = await db.save_review(state["review"])
+    return {"review_id": review_id, "logs": [f"Persisted id={review_id}"]}
+
+async def post_comment_node(state: AgentState) -&gt; dict:
+    """Node 6: Post markdown comment to GitHub."""
+    settings = get_settings()
+    # Multiple conditions checked: error? no review? posting disabled? needs approval?
+    if (state.get("error") or not state.get("review")
+            or not state.get("post_comment") or settings.require_human_approval):
+        return {}
+    github = GitHubService()
+    markdown = review_to_markdown(state["review"])
+    github.post_review_comment(state["repo"], state["pr_number"], markdown)
+    return {"logs": ["Comment posted to GitHub"]}</code></pre>
+</div>
+
+<div class="code-card">
+  <div class="code-header">Graph assembly &mdash; wiring nodes + edges + compiling</div>
+<pre><code class="language-python">from langgraph.graph import END, StateGraph
+
+def build_review_graph() -&gt; StateGraph:
+    graph = StateGraph(AgentState)   # pass TypedDict class as schema
+
+    # Register each node: (name, async_function)
+    graph.add_node("fetch_diff",     fetch_diff_node)
+    graph.add_node("llm_review",     llm_review_node)
+    graph.add_node("parse_response", parse_response_node)
+    graph.add_node("build_review",   build_review_node)
+    graph.add_node("persist_review", persist_review_node)
+    graph.add_node("post_comment",   post_comment_node)
+
+    # Set entry point (first node to execute)
+    graph.set_entry_point("fetch_diff")
+
+    # Linear edges: A always goes to B
+    graph.add_edge("fetch_diff",     "llm_review")
+    graph.add_edge("llm_review",     "parse_response")
+    graph.add_edge("parse_response", "build_review")
+    graph.add_edge("build_review",   "persist_review")
+    graph.add_edge("persist_review", "post_comment")
+    graph.add_edge("post_comment",   END)   # END is special: terminates graph
+
+    return graph.compile()  # returns a CompiledStateGraph (runnable)
+
+# Module-level singleton
+review_graph = build_review_graph()
+
+# To run the graph:
+result = await review_graph.ainvoke({
+    "repo": "owner/repo",
+    "pr_number": 42,
+    "post_comment": True,
+    "pr_diff": None,
+    "raw_llm_response": "",
+    "parsed_data": {},
+    "review": None,
+    "review_id": "",
+    "error": "",
+    "logs": [],  # starts empty; each node appends its log entries
+})
+print(result["review"].final_verdict)  # APPROVE / REQUEST_CHANGES / COMMENT
+print(result["logs"])                  # ["Fetched diff for PR #42", "LLM review generated", ...]</code></pre>
+</div>
+
+<div class="analogy">
+  <div class="analogy-label">Mental Model</div>
+  <p>Think of LangGraph like a factory assembly line. The conveyor belt (graph) moves a work item (state) through stations (nodes). If a station breaks (error), the item is flagged and all downstream stations just let it pass through without touching it. At any point you can insert a new station into the line or split the line into two parallel tracks.</p>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>How to Extend: Adding Parallel Branches</h2></div>
+  <div class="card-body">
+    <p>This is LangGraph&apos;s key advantage. To add a parallel security scan alongside the LLM review:</p>
+  </div>
+</div>
+<div class="code-card">
+  <div class="code-header">Extending the graph with parallel branches (future capability)</div>
+<pre><code class="language-python"># Add a new node
+async def static_analysis_node(state: AgentState) -&gt; dict:
+    if state.get("error"): return {}
+    # Run bandit/semgrep on the diff
+    issues = run_static_analysis(state["pr_diff"].diff_text)
+    return {"static_issues": issues, "logs": ["Static analysis complete"]}
+
+# In build_review_graph():
+graph.add_node("static_analysis", static_analysis_node)
+
+# Instead of: fetch_diff -&gt; llm_review
+# Use parallel: fetch_diff -&gt; {llm_review AND static_analysis} -&gt; build_review
+from langgraph.graph import START
+graph.add_edge("fetch_diff", "llm_review")
+graph.add_edge("fetch_diff", "static_analysis")
+# Both run concurrently; build_review waits for both
+graph.add_edge("llm_review", "build_review")
+graph.add_edge("static_analysis", "build_review")</code></pre>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: What does <code>Annotated[list[str], operator.add]</code> do in your AgentState TypedDict?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="lgq1" id="lgq1a" value="0"><label for="lgq1a">It restricts the list to only hold strings</label></div>
+    <div class="opt"><input type="radio" name="lgq1" id="lgq1b" value="1"><label for="lgq1b">It tells LangGraph to use operator.add as the reducer &mdash; so when a node returns {&quot;logs&quot;: [&quot;new&quot;]}, LangGraph appends to the existing list instead of replacing it</label></div>
+    <div class="opt"><input type="radio" name="lgq1" id="lgq1c" value="2"><label for="lgq1c">It validates that all strings in the list are valid log messages</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ2('lgq1',1,'LangGraph uses the second argument of Annotated as a reducer function. operator.add on lists does list concatenation. So existing ["log1"] + new ["log2"] = ["log1", "log2"]. Without this, each node returning {"logs": ["new"]} would replace the previous list entirely, losing all prior log entries.')">Check Answer</button>
+  <div class="feedback" id="fb-lgq1"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: Why does every node in your pipeline check <code>if state.get("error"): return {}</code>?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="lgq2" id="lgq2a" value="0"><label for="lgq2a">It is a LangGraph requirement &mdash; all nodes must return {} sometimes</label></div>
+    <div class="opt"><input type="radio" name="lgq2" id="lgq2b" value="1"><label for="lgq2b">It implements the short-circuit pattern: once any node fails and sets error, all downstream nodes skip their work. This avoids cascading failures (e.g., don&apos;t try to post to GitHub if the LLM call failed).</label></div>
+    <div class="opt"><input type="radio" name="lgq2" id="lgq2c" value="2"><label for="lgq2c">It is a performance optimization to skip unnecessary API calls</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ2('lgq2',1,'This is explicit error propagation. When fetch_diff fails and sets error, all 5 downstream nodes return {} immediately. The graph still runs to completion (no exception thrown), but the final state has error set. The caller checks state["error"] to know if something failed. Returning {} means &ldquo;I did not change any state fields&rdquo;.')">Check Answer</button>
+  <div class="feedback" id="fb-lgq2"></div>
+</div>
+
+
+<!-- ==================== CLAUDE API ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="section-title">&#129302; Anthropic Claude API &mdash; Messages, Caching, Streaming</h1>
+<p class="section-intro">Claude is the LLM powering your Code Review Agent and Lead Classifier. Understanding the SDK deeply lets you optimize cost, avoid timeouts, and explain every API decision in interviews.</p>
+
+<div class="card">
+  <div class="card-header"><h2>The Messages API &mdash; Core Structure</h2></div>
+  <div class="card-body">
+    <p>Every Claude API call is a <code>messages.create()</code> call. The structure is:</p>
+    <table>
+      <tr><th>Parameter</th><th>Type</th><th>Purpose</th></tr>
+      <tr><td>model</td><td>string</td><td>Which Claude model: claude-sonnet-4-6, claude-opus-4-7, etc.</td></tr>
+      <tr><td>max_tokens</td><td>int</td><td>Max tokens in the response. Not a limit on your input.</td></tr>
+      <tr><td>system</td><td>str or list</td><td>System prompt &mdash; sets Claude&apos;s persona and instructions</td></tr>
+      <tr><td>messages</td><td>list of dicts</td><td>Conversation history: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;...&quot;}]</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">app/services/llm/claude_client.py &mdash; your actual implementation</div>
+<pre><code class="language-python">import anthropic
+from app.config import get_settings
+
+# This is the cached system prompt &mdash; the ENTIRE expert persona + JSON schema.
+# It never changes between requests, making it perfect for caching.
+_SYSTEM_PROMPT = (
+    "You are an expert software engineer performing a thorough code review. "
+    "You will be given a git diff of a pull request. "
+    "Respond ONLY with a single valid JSON object &mdash; no prose before or after. "
+    # ... the full JSON schema definition ...
+)
+
+class ClaudeClient(BaseLLMClient):
+    def __init__(self) -&gt; None:
+        settings = get_settings()
+        # AsyncAnthropic = async client (use with await)
+        # Anthropic = sync client (use without await)
+        self._client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+        self._model = settings.claude_model  # "claude-sonnet-4-6"
+
+    async def generate_review(self, prompt: str) -&gt; str:
+        message = await self._client.messages.create(
+            model=self._model,
+            max_tokens=4096,
+            system=[
+                {
+                    "type": "text",
+                    "text": _SYSTEM_PROMPT,
+                    # THIS is prompt caching.
+                    # On first call: Claude computes + caches this block.
+                    # On subsequent calls: reads from cache at ~10% cost.
+                    "cache_control": {"type": "ephemeral"}
+                }
+            ],
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = message.content[0].text
+        return raw</code></pre>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Prompt Caching &mdash; How It Saves 90% Cost</h2></div>
+  <div class="card-body">
+    <p>Prompt caching is one of the most impactful optimizations in your project. Here&apos;s exactly how it works:</p>
+    <ul>
+      <li><strong>First request:</strong> Claude processes <code>_SYSTEM_PROMPT</code> (the expert persona + JSON schema, ~500 tokens) and stores the computed key-value attention pairs in a cache. You pay full input token price + a small cache-write fee.</li>
+      <li><strong>Subsequent requests (within 5 min):</strong> Claude reads from cache. You pay only ~10% of the original input token cost for those cached tokens.</li>
+      <li><strong>Real savings:</strong> Your system prompt is ~500 tokens. At $3/million tokens (Claude Sonnet), that&apos;s $0.0015 per request. With caching: $0.00015 per request. 100 reviews/day saves $0.135/day = $49/year.</li>
+    </ul>
+    <table>
+      <tr><th>Token Type</th><th>Cost (Sonnet)</th><th>When charged</th></tr>
+      <tr><td>input_tokens</td><td>$3/M tokens</td><td>New tokens not in cache (the PR diff)</td></tr>
+      <tr><td>cache_creation_input_tokens</td><td>$3.75/M tokens</td><td>First time you cache a block</td></tr>
+      <tr><td>cache_read_input_tokens</td><td>$0.30/M tokens</td><td>Subsequent reads from cache (10% price!)</td></tr>
+      <tr><td>output_tokens</td><td>$15/M tokens</td><td>Claude&apos;s JSON response</td></tr>
+    </table>
+    <div class="callout tip">Minimum size for caching: 1,024 tokens for Claude Sonnet. Your system prompt must be at least that long to be eligible for caching.</div>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">demo1_lead_classifier/app.py &mdash; streaming implementation</div>
+<pre><code class="language-python"># Streaming prevents HTTP timeouts for long LLM responses.
+# Without streaming: the HTTP connection stays open waiting for the full response.
+# With streaming: you get tokens as they arrive; no timeout.
+
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+# The cached system prompt as a list block
+CACHED_SYSTEM = [
+    {
+        "type": "text",
+        "text": CLASSIFY_PROMPT,
+        "cache_control": {"type": "ephemeral"},
+    }
+]
+
+# Using context manager for streaming
+with client.messages.stream(
+    model="claude-sonnet-4-6",
+    max_tokens=1000,
+    system=CACHED_SYSTEM,
+    messages=[{"role": "user", "content": user_message}],
+) as stream:
+    # stream.get_final_message() waits for the complete response
+    # but keeps the HTTP connection alive with streaming
+    final = stream.get_final_message()
+
+raw_text = final.content[0].text.strip()
+
+# Claude sometimes wraps JSON in ```json ... ``` markdown fences.
+# Strip them if present:
+if raw_text.startswith("```"):
+    raw_text = raw_text.split("```")[1]
+    if raw_text.startswith("json"):
+        raw_text = raw_text[4:]
+    raw_text = raw_text.strip()
+
+result = json.loads(raw_text)
+return LeadOutput(**result)</code></pre>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: Why is the system prompt passed as a <em>list</em> with <code>cache_control</code>, instead of just a plain string?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="cq1" value="0"><label>The Anthropic SDK requires system to be a list in all cases</label></div>
+    <div class="opt"><input type="radio" name="cq1" value="1"><label>Passing as a list with cache_control: ephemeral enables Anthropic&apos;s prompt caching. A plain string works but cannot be cached, meaning you pay full input token cost every single request.</label></div>
+    <div class="opt"><input type="radio" name="cq1" value="2"><label>Lists allow multiple system prompts to be combined</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ2('cq1',1,'A plain string system prompt works but cannot be cached. The list format with {"type": "text", "text": ..., "cache_control": {"type": "ephemeral"}} marks that block for caching. On the first request, Claude computes and stores the attention for this block. All subsequent requests within the cache lifetime (5 min) read it from cache at ~10% cost. This is how your lead classifier achieves 90% input token savings on repeated calls.')">Check Answer</button>
+  <div class="feedback" id="fb-cq1"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: Your lead classifier uses <code>client.messages.stream()</code> internally. Why not just use <code>client.messages.create()</code>?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="cq2" value="0"><label>create() does not support system prompts</label></div>
+    <div class="opt"><input type="radio" name="cq2" value="1"><label>Streaming prevents HTTP timeouts. create() holds the connection open waiting for the full response, which can exceed 30-60 second timeouts on servers. Streaming sends chunks as they arrive, keeping the connection alive.</label></div>
+    <div class="opt"><input type="radio" name="cq2" value="2"><label>Streaming is faster because it processes tokens in parallel</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ2('cq2',1,'When Claude generates a long response (e.g., 800 tokens), create() silently waits. On Railway/Render/Heroku the default timeout is 30 seconds. If generation takes longer, the connection drops and you get a 502 error. Streaming keeps sending data (token by token), so the connection never times out. stream.get_final_message() waits for the complete message while streaming keeps the connection alive.')">Check Answer</button>
+  <div class="feedback" id="fb-cq2"></div>
+</div>
+
+
+<!-- ==================== PYGITHUB + WEBHOOKS ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="section-title">&#128202; PyGithub + HMAC Webhooks</h1>
+<p class="section-intro">PyGithub is how your Code Review Agent reads PR diffs and posts comments. The webhook endpoint allows GitHub to automatically trigger reviews when PRs are opened or updated.</p>
+
+<div class="code-card">
+  <div class="code-header">app/services/github_service.py &mdash; full walkthrough</div>
+<pre><code class="language-python">import hashlib, hmac
+from dataclasses import dataclass
+from github import Github, GithubException
+
+@dataclass
+class PRDiff:
+    """Aggregated PR data &mdash; DTO between GitHubService and the pipeline."""
+    repo: str
+    pr_number: int
+    pr_title: str
+    pr_url: str
+    author: str
+    base_branch: str
+    head_branch: str
+    files_changed: list[dict]   # [{filename, status, additions, deletions, patch}]
+    diff_text: str               # full unified diff as a single string
+
+class GitHubService:
+    def __init__(self) -&gt; None:
+        settings = get_settings()
+        # Github(token) authenticates all API calls
+        # GitHub Personal Access Token needs &apos;repo&apos; scope
+        self._gh = Github(settings.github_token)
+        self._max_diff_chars = settings.max_diff_chars  # 50,000 chars
+
+    def fetch_pr_diff(self, repo_name: str, pr_number: int) -&gt; PRDiff:
+        repo = self._gh.get_repo(repo_name)   # returns Repository object
+        pr = repo.get_pull(pr_number)          # returns PullRequest object
+
+        files_changed = []
+        diff_parts = []
+
+        for f in pr.get_files():  # PaginatedList of File objects
+            # f.filename = "src/auth.py"
+            # f.status   = "modified" | "added" | "removed" | "renamed"
+            # f.additions = lines added
+            # f.deletions = lines removed
+            # f.patch     = the actual diff patch (e.g., @@ -10,7 +10,9 @@ ...)
+            files_changed.append({
+                "filename": f.filename,
+                "status": f.status,
+                "additions": f.additions,
+                "deletions": f.deletions,
+                "patch": f.patch or "",
+            })
+            if f.patch:
+                # Build unified diff format for the LLM prompt
+                diff_parts.append(f"--- a/{f.filename}\n+++ b/{f.filename}\n{f.patch}")
+
+        diff_text = "\n\n".join(diff_parts)
+        # Truncate very large diffs to avoid hitting LLM context limits
+        if len(diff_text) &gt; self._max_diff_chars:
+            diff_text = diff_text[:self._max_diff_chars] + "\n\n[... diff truncated ...]"
+
+        return PRDiff(repo=repo_name, pr_number=pr_number, pr_title=pr.title,
+                      pr_url=pr.html_url, author=pr.user.login,
+                      base_branch=pr.base.ref, head_branch=pr.head.ref,
+                      files_changed=files_changed, diff_text=diff_text)
+
+    def post_review_comment(self, repo_name: str, pr_number: int, body: str) -&gt; str:
+        repo = self._gh.get_repo(repo_name)
+        pr = repo.get_pull(pr_number)
+        comment = pr.create_issue_comment(body)  # posts markdown as PR comment
+        return comment.html_url
+
+    @staticmethod
+    def verify_webhook_signature(payload: bytes, signature: str) -&gt; bool:
+        """HMAC-SHA256 verification for GitHub webhook payloads."""
+        secret = get_settings().github_webhook_secret
+        if not secret:
+            return True  # dev mode: skip verification
+
+        # Compute expected signature
+        expected = "sha256=" + hmac.new(
+            secret.encode(),   # secret key as bytes
+            payload,           # raw request body bytes
+            hashlib.sha256     # algorithm
+        ).hexdigest()
+
+        # Use compare_digest to prevent timing attacks
+        # (regular == is vulnerable to timing side-channels)
+        return hmac.compare_digest(expected, signature)</code></pre>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>HMAC Webhook Security &mdash; Why It Matters</h2></div>
+  <div class="card-body">
+    <p>When GitHub sends a webhook to your server, anyone on the internet could also send a fake POST to <code>/webhook/github</code>. HMAC verification proves the request genuinely came from GitHub:</p>
+    <ul>
+      <li>You configure a <strong>secret</strong> in both GitHub&apos;s webhook settings and your <code>.env</code></li>
+      <li>GitHub signs every webhook payload with HMAC-SHA256 using that secret and sends the signature in <code>X-Hub-Signature-256</code> header</li>
+      <li>You recompute the signature on your end and compare</li>
+      <li>If they match, the request is genuine. If not, reject it (403).</li>
+    </ul>
+    <div class="callout warning">Why <code>hmac.compare_digest()</code> instead of <code>==</code>? Regular string comparison short-circuits at the first differing character, leaking timing information. An attacker could brute-force the signature bit by bit by measuring response times. <code>compare_digest</code> always takes the same time regardless of where strings differ.</div>
+  </div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: Why does your code use <code>hmac.compare_digest(expected, signature)</code> instead of <code>expected == signature</code>?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="ghq1" value="0"><label>compare_digest is faster for long strings</label></div>
+    <div class="opt"><input type="radio" name="ghq1" value="1"><label>compare_digest prevents timing attacks. Regular == returns early at the first mismatch, leaking how many characters match. An attacker could measure response times to guess the signature character by character. compare_digest always takes constant time.</label></div>
+    <div class="opt"><input type="radio" name="ghq1" value="2"><label>compare_digest handles None values safely</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ2('ghq1',1,'Timing attacks exploit the fact that == short-circuits. If the first character matches, it takes slightly longer than if it mismatches at position 0. An attacker sends thousands of requests with different signatures and measures response times to infer the secret. hmac.compare_digest is a constant-time comparison that takes the same time regardless of how many characters match. This is a critical security practice for any signature verification.')">Check Answer</button>
+  <div class="feedback" id="fb-ghq1"></div>
+</div>
+
+
+<!-- ==================== MONGODB + MOTOR ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="section-title">&#128196; MongoDB + Motor &mdash; Async Database</h1>
+<p class="section-intro">Motor is the async MongoDB driver used in your Code Review Agent. Understanding it means you can explain async database operations and the MongoDB data model.</p>
+
+<div class="card">
+  <div class="card-header"><h2>Why Motor Instead of PyMongo?</h2></div>
+  <div class="card-body">
+    <p>PyMongo is synchronous &mdash; it blocks the thread while waiting for MongoDB. In a FastAPI async app, blocking the event loop kills performance. <strong>Motor</strong> (Motor = async + PyMongo) provides the exact same API but all I/O operations return awaitables. Your async FastAPI handlers can await database calls without blocking.</p>
+    <table>
+      <tr><th>Operation</th><th>PyMongo (sync)</th><th>Motor (async)</th></tr>
+      <tr><td>Insert</td><td>collection.insert_one(doc)</td><td>await collection.insert_one(doc)</td></tr>
+      <tr><td>Find one</td><td>collection.find_one(filter)</td><td>await collection.find_one(filter)</td></tr>
+      <tr><td>Find many</td><td>collection.find(filter).limit(n)</td><td>await collection.find(filter).limit(n).to_list(n)</td></tr>
+      <tr><td>Update</td><td>collection.update_one(f, update)</td><td>await collection.update_one(f, update)</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">DatabaseService pattern from your code_review_agent</div>
+<pre><code class="language-python">from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import DESCENDING
+from bson import ObjectId
+from app.models.review import CodeReview
+
+class DatabaseService:
+    def __init__(self):
+        settings = get_settings()
+        # AsyncIOMotorClient creates a connection pool (not a single connection)
+        client = AsyncIOMotorClient(settings.mongodb_uri)
+        db = client["code_review_db"]       # database name
+        self._col = db["reviews"]           # collection name
+
+    async def save_review(self, review: CodeReview) -&gt; str:
+        # model_dump() converts Pydantic model to a plain dict
+        doc = review.model_dump()
+        result = await self._col.insert_one(doc)
+        # insert_one returns InsertOneResult; .inserted_id is a BSON ObjectId
+        return str(result.inserted_id)  # convert to string for API response
+
+    async def get_review(self, review_id: str) -&gt; dict | None:
+        # ObjectId(review_id) converts string back to BSON ObjectId
+        return await self._col.find_one({"_id": ObjectId(review_id)})
+
+    async def list_reviews(
+        self,
+        repo: str | None = None,
+        limit: int = 20,
+        skip: int = 0
+    ) -&gt; list[dict]:
+        filter_q = {}
+        if repo:
+            filter_q["repo"] = repo  # filter by repository name
+
+        cursor = (
+            self._col
+            .find(filter_q)
+            .sort("reviewed_at", DESCENDING)  # newest first
+            .skip(skip)    # pagination: skip N documents
+            .limit(limit)  # return at most N documents
+        )
+        # to_list(limit) fetches all results into a Python list
+        return await cursor.to_list(limit)
+
+    async def update_review_approval(
+        self,
+        review_id: str,
+        approved_by: str,
+        posted: bool = True
+    ) -&gt; None:
+        await self._col.update_one(
+            {"_id": ObjectId(review_id)},         # filter: find this document
+            {"$set": {                              # $set: only update these fields
+                "approved_by": approved_by,
+                "posted_to_github": posted
+            }}
+        )</code></pre>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: Why does <code>save_review</code> call <code>review.model_dump()</code> before inserting into MongoDB?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="mgq1" value="0"><label>MongoDB only accepts JSON strings, not Python objects</label></div>
+    <div class="opt"><input type="radio" name="mgq1" value="1"><label>Motor&apos;s insert_one requires a plain Python dict. model_dump() converts the Pydantic model to a dict. MongoDB then stores each field as a BSON document.</label></div>
+    <div class="opt"><input type="radio" name="mgq1" value="2"><label>model_dump() compresses the data for efficient storage</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ2('mgq1',1,'Motor (and PyMongo) expect plain Python dicts for insert operations. review.model_dump() serializes the Pydantic CodeReview model into {"repo": "...", "pr_number": 42, "bugs": [...], ...}. MongoDB stores this as a BSON document, automatically adding an _id field (ObjectId). When you read it back, find_one returns a plain dict which you can reconstruct into CodeReview(**doc).')">Check Answer</button>
+  <div class="feedback" id="fb-mgq1"></div>
+</div>
+
+
+<!-- ==================== TF-IDF ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="section-title">&#128200; TF-IDF + Cosine Similarity</h1>
+<p class="section-intro">Used in KeaBuilder AI (Demo 2) and KeaBuilder ML (Demo 1). TF-IDF is a classical NLP technique for finding similar text without any AI model. You must be able to explain the math and know when to use it vs sentence-transformers.</p>
+
+<div class="card">
+  <div class="card-header"><h2>The Math &mdash; TF-IDF Explained Simply</h2></div>
+  <div class="card-body">
+    <p><strong>TF (Term Frequency):</strong> How often does word W appear in document D, normalized by document length?</p>
+    <div class="math-block">TF(w, d) = count(w in d) / total_words(d)</div>
+    <p><strong>IDF (Inverse Document Frequency):</strong> How unique is word W across ALL documents? Rare words get higher scores; common words like &ldquo;the&rdquo; get penalized.</p>
+    <div class="math-block">IDF(w) = log(N / df(w)) &nbsp;&nbsp; where N = total docs, df(w) = docs containing w</div>
+    <p><strong>TF-IDF Score:</strong></p>
+    <div class="math-block">TF-IDF(w, d) = TF(w, d) &times; IDF(w)</div>
+    <p>Each document becomes a <strong>vector</strong> where each dimension = TF-IDF score of one word in the vocabulary. To find similarity, compute the cosine of the angle between two vectors.</p>
+    <div class="math-block">cosine_similarity(A, B) = (A &middot; B) / (|A| &times; |B|) &nbsp;&nbsp; Range: 0 (no overlap) to 1 (identical)</div>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">demo2_similarity_search/app.py &mdash; your exact implementation explained</div>
+<pre><code class="language-python">from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+
+# Called on every request (no persistent state needed for small corpus)
+def find_similar(query: str, corpus: list[dict], top_k: int):
+    texts = [item["text"] for item in corpus]  # extract text strings
+    all_texts = texts + [query]  # put query LAST
+
+    vectorizer = TfidfVectorizer(
+        ngram_range=(1, 2),   # include unigrams ("funnel") + bigrams ("sales funnel")
+                              # bigrams capture phrases that change meaning together
+        stop_words="english", # remove: the, is, a, for, ... (high IDF but no meaning)
+        max_features=10000    # vocabulary cap: keep top 10,000 most informative terms
+                              # prevents memory blow-up on large corpora
+    )
+
+    # fit_transform: (1) learns vocabulary from all_texts, (2) transforms all to vectors
+    # Returns sparse matrix shape: (len(all_texts), vocabulary_size)
+    # Sparse because most words appear in few documents (most entries are 0)
+    tfidf_matrix = vectorizer.fit_transform(all_texts)
+
+    # Extract the query vector (last row) and corpus matrix (all other rows)
+    query_vector = tfidf_matrix[-1]          # shape: (1, vocab_size)
+    corpus_matrix = tfidf_matrix[:-1]        # shape: (n_docs, vocab_size)
+
+    # cosine_similarity returns matrix shape (1, n_docs)
+    # [0] unwraps to 1-D array of scores
+    scores = cosine_similarity(query_vector, corpus_matrix)[0]
+    # scores[i] = similarity between query and corpus[i], range 0.0 to 1.0
+
+    # Pair each score with its corpus item
+    results = []
+    for i, score in enumerate(scores):
+        results.append({
+            **corpus[i],
+            "similarity_score": round(float(score), 4)
+        })
+
+    # Sort descending by similarity score
+    results.sort(key=lambda x: x["similarity_score"], reverse=True)
+    return results[:top_k]</code></pre>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Score Interpretation + Limitations</h2></div>
+  <div class="card-body">
+    <table>
+      <tr><th>Score Range</th><th>Meaning</th></tr>
+      <tr><td>0.7 &ndash; 1.0</td><td>Strong match &mdash; many shared keywords, similar phrasing</td></tr>
+      <tr><td>0.4 &ndash; 0.7</td><td>Partial match &mdash; some shared terms</td></tr>
+      <tr><td>0.1 &ndash; 0.4</td><td>Weak match &mdash; few shared words</td></tr>
+      <tr><td>0.0 &ndash; 0.1</td><td>No meaningful overlap</td></tr>
+    </table>
+    <p><strong>Why TF-IDF fails on semantics:</strong> &ldquo;I want to sell my coaching program&rdquo; and &ldquo;monetize my mentoring service&rdquo; share zero keywords, so TF-IDF gives them a score near 0. But they mean the same thing. This is the limitation that <strong>sentence-transformers</strong> solves by encoding meaning into dense vectors.</p>
+  </div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: Why does your vectorizer use <code>ngram_range=(1, 2)</code> instead of just <code>(1, 1)</code>?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="tq1" value="0"><label>Bigrams are required for TF-IDF to work</label></div>
+    <div class="opt"><input type="radio" name="tq1" value="1"><label>Bigrams capture two-word phrases that have different meaning together. &ldquo;sales funnel&rdquo; means something different from &ldquo;sales&rdquo; + &ldquo;funnel&rdquo; separately. Including bigrams improves precision for domain-specific queries.</label></div>
+    <div class="opt"><input type="radio" name="tq1" value="2"><label>Bigrams improve performance by reducing the vocabulary size</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ2('tq1',1,'ngram_range=(1, 2) means include unigrams ("sales") AND bigrams ("sales funnel"). A query for "sales funnel" has a much stronger signal when "sales funnel" is treated as a single token than when broken into two. Note: bigrams increase vocabulary size, which is why max_features=10000 is important to cap memory usage.')">Check Answer</button>
+  <div class="feedback" id="fb-tq1"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: Your code calls <code>vectorizer.fit_transform(all_texts)</code> where <code>all_texts = corpus + [query]</code>. Why is the query included in fit_transform instead of fit on corpus then transform query separately?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="tq2" value="0"><label>Including the query in fit ensures the vocabulary includes query-specific terms, so query words are not out-of-vocabulary</label></div>
+    <div class="opt"><input type="radio" name="tq2" value="1"><label>It is a mistake; you should always fit only on corpus</label></div>
+    <div class="opt"><input type="radio" name="tq2" value="2"><label>It makes the computation faster</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ2('tq2',0,'If you fit only on the corpus, query words not in the corpus vocabulary are silently ignored (out-of-vocabulary). By including the query in fit_transform, all query terms are in the vocabulary and get proper TF-IDF weights. This is a deliberate trade-off: the IDF scores are slightly influenced by the query itself, but for small corpora this gives better results than dropping query-unique terms entirely. In production with a large persistent corpus, you would fit once on the corpus and use transform() for queries.')">Check Answer</button>
+  <div class="feedback" id="fb-tq2"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script>
+function checkQ2(name, correct, explanation) {
+  const radios = document.querySelectorAll('input[name="' + name + '"]');
+  let selected = -1;
+  radios.forEach((r, i) => { if (r.checked) selected = parseInt(r.value); });
+  if (selected === -1) { alert('Please select an answer!'); return; }
+  const fb = document.getElementById('fb-' + name);
+  if (!fb) return;
+  fb.style.display = 'block';
+  if (selected === correct) {
+    fb.className = 'feedback correct';
+    fb.innerHTML = '&#9989; <strong>Correct!</strong> ' + explanation;
+  } else {
+    fb.className = 'feedback wrong';
+    fb.innerHTML = '&#10060; <strong>Incorrect.</strong> ' + explanation;
+  }
+  radios.forEach(r => r.disabled = true);
+}
+if (typeof Prism !== 'undefined') Prism.highlightAll();
+</script>
+</body>
+</html>
