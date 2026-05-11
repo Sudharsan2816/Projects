@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Platform Part 3 - pgvector, RAG, System Design, Quiz</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#22272e;--t1:#e6edf3;--t2:#8b949e;--t3:#6e7681;--blue:#58a6ff;--green:#3fb950;--orange:#d29922;--purple:#bc8cff;--red:#f85149;--cyan:#39d353;--border:#30363d;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--t1);max-width:900px;margin:0 auto;padding:2rem;}
+.nav-bar{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:0.8rem 1.2rem;margin-bottom:2rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;}
+.nav-bar a{color:var(--blue);text-decoration:none;font-size:0.85rem;}
+.nav-bar span{color:var(--t3);font-size:0.85rem;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:1.5rem;overflow:hidden;}
+.card-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);}
+.card-header h2{font-size:1rem;color:var(--t1);}
+.card-body{padding:1.2rem;}
+.card-body p,.card-body li{color:var(--t2);line-height:1.75;}
+.card-body strong{color:var(--t1);}
+.card-body code{background:var(--bg4);color:var(--orange);padding:0.1rem 0.4rem;border-radius:3px;font-family:monospace;font-size:0.85em;}
+.card-body ul{padding-left:1.5rem;margin-bottom:0.8rem;}
+.code-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:1.5rem;overflow:hidden;}
+.code-header{padding:0.7rem 1.2rem;background:var(--bg3);border-bottom:1px solid var(--border);font-size:0.82rem;color:var(--t2);}
+.code-card pre{margin:0!important;border-radius:0!important;}
+.code-card pre code{font-size:0.82rem!important;}
+.analogy{background:linear-gradient(135deg,#0d1f35,#0d2613);border:1px solid #1a3a5c;border-radius:10px;padding:1.2rem;margin-bottom:1.5rem;}
+.analogy-label{font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:0.5rem;}
+.analogy p{color:#a8c9ef;line-height:1.7;}
+.callout{padding:0.8rem 1rem;border-radius:7px;margin-bottom:1rem;font-size:0.87rem;line-height:1.6;}
+.callout.tip{background:#0d2613;border-left:3px solid var(--green);color:#9ae6a0;}
+.callout.info{background:#0d1f35;border-left:3px solid var(--blue);color:#a8c9ef;}
+.callout.warning{background:#2a1f00;border-left:3px solid var(--orange);color:#e6c88a;}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85rem;}
+th{background:var(--bg3);color:var(--t2);padding:0.6rem 0.8rem;text-align:left;border-bottom:2px solid var(--border);font-weight:600;}
+td{padding:0.55rem 0.8rem;border-bottom:1px solid var(--border);color:var(--t2);}
+td:first-child{color:var(--t1);font-weight:600;}
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:0.3rem;margin:1rem 0;}
+.flow-node{background:var(--bg3);border:1px solid var(--blue);border-radius:6px;padding:0.4rem 0.8rem;font-size:0.8rem;color:var(--blue);font-weight:600;}
+.flow-arrow{color:var(--t3);font-size:1.1rem;}
+.s-title{font-size:1.8rem;color:var(--t1);margin:2rem 0 0.5rem;}
+.s-intro{color:var(--t2);margin-bottom:1.5rem;line-height:1.7;}
+.math-block{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:1rem;margin:1rem 0;font-family:monospace;font-size:0.85rem;color:var(--orange);text-align:center;}
+.quiz-q{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.2rem;margin-bottom:1rem;}
+.q-text{font-size:0.9rem;color:var(--t1);margin-bottom:0.8rem;font-weight:600;}
+.options{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.6rem;}
+.opt{display:flex;align-items:flex-start;gap:0.6rem;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:6px;}
+.opt label{font-size:0.85rem;color:var(--t2);cursor:pointer;}
+.check-btn{padding:0.4rem 1rem;background:var(--blue);color:#000;border:none;border-radius:5px;font-size:0.82rem;font-weight:700;cursor:pointer;}
+.feedback{display:none;margin-top:0.6rem;padding:0.7rem 0.9rem;border-radius:6px;font-size:0.83rem;}
+.feedback.correct{background:#0d2613;border:1px solid var(--green);color:#9ae6a0;}
+.feedback.wrong{background:#2a0d0d;border:1px solid var(--red);color:#f0a0a0;}
+.quiz-score{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.5rem;text-align:center;margin-top:2rem;}
+</style>
+</head>
+<body>
+
+<div class="nav-bar">
+  <strong style="color:var(--t1)">&#127891; Learn Your Projects</strong>
+  <span>|</span>
+  <a href="index.html">&#8592; Part 1: FastAPI, Pydantic</a>
+  <span>|</span>
+  <a href="part2.html">&#8592; Part 2: LangGraph, Claude, PyGithub, MongoDB, TF-IDF</a>
+  <span>|</span>
+  <span style="color:var(--blue)">Part 3: pgvector, FAISS, RAG, Docker, Quiz</span>
+</div>
+
+<!-- ==================== POSTGRESQL + PGVECTOR ==================== -->
+<h1 class="s-title">&#128190; PostgreSQL + pgvector &mdash; Vector-Native Database</h1>
+<p class="s-intro">pgvector adds a native <code>vector</code> data type and similarity search operators to PostgreSQL. You designed the full schema in your KeaBuilder ML Assessment.</p>
+
+<div class="card">
+  <div class="card-header"><h2>What is pgvector and Why Use It?</h2></div>
+  <div class="card-body">
+    <table>
+      <tr><th>Comparison</th><th>pgvector</th><th>Dedicated vector DB (Pinecone, Qdrant)</th></tr>
+      <tr><td>Setup</td><td>One PostgreSQL extension</td><td>Separate service to deploy</td></tr>
+      <tr><td>SQL joins</td><td>Full SQL &mdash; join vectors with user tables</td><td>Not natively possible</td></tr>
+      <tr><td>Scale</td><td>Millions of vectors with HNSW index</td><td>Billions of vectors</td></tr>
+      <tr><td>Cost</td><td>Your existing Postgres bill</td><td>Separate pricing ($70+/month)</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">demo2_schema_design/schema.sql &mdash; your full schema with explanations</div>
+<pre><code class="language-sql">CREATE EXTENSION IF NOT EXISTS "pgcrypto";  -- for gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS "vector";    -- for vector type + operators
+
+-- USERS TABLE
+CREATE TABLE users (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- UUID: 128-bit random ID. Better than serial/integer because:
+    -- (1) no sequential guessing by attackers
+    -- (2) safe for distributed systems
+    -- (3) can be generated client-side without DB round-trip
+    email      VARCHAR(255) UNIQUE NOT NULL,
+    name       VARCHAR(255),
+    plan       VARCHAR(50) DEFAULT 'free',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- USER_INPUTS
+CREATE TABLE user_inputs (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    input_text TEXT NOT NULL,
+    input_type VARCHAR(50) NOT NULL,
+    metadata   JSONB DEFAULT '{}',  -- JSONB: binary JSON, indexable, queryable
+    ip_address INET,                -- PostgreSQL native IP type
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- PREDICTIONS
+CREATE TABLE predictions (
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    input_id         UUID NOT NULL REFERENCES user_inputs(id) ON DELETE CASCADE,
+    model_name       VARCHAR(100) NOT NULL,
+    model_version    VARCHAR(20) NOT NULL,
+    prediction_label VARCHAR(100),  -- 'HOT' | 'WARM' | 'COLD'
+    confidence       FLOAT,
+    raw_output       JSONB DEFAULT '{}',
+    latency_ms       INTEGER,
+    created_at       TIMESTAMP DEFAULT NOW()
+);
+
+-- EMBEDDINGS: vector representations for semantic search
+CREATE TABLE embeddings (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    input_id   UUID NOT NULL REFERENCES user_inputs(id) ON DELETE CASCADE,
+    user_id    UUID NOT NULL REFERENCES users(id),
+    embedding  vector(384),  -- 384 floats = all-MiniLM-L6-v2 output dimension
+    model_name VARCHAR(100) DEFAULT 'all-MiniLM-L6-v2',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- B-tree indexes for filtering
+CREATE INDEX idx_user_inputs_user_id ON user_inputs(user_id);
+CREATE INDEX idx_user_inputs_created ON user_inputs(created_at DESC);
+CREATE INDEX idx_predictions_label   ON predictions(prediction_label);
+
+-- IVFFlat vector index for approximate nearest neighbor search
+-- lists = 100: number of clusters (rule of thumb: sqrt(n_rows))
+CREATE INDEX idx_embeddings_vector ON embeddings
+    USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);</code></pre>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>pgvector Distance Operators</h2></div>
+  <div class="card-body">
+    <table>
+      <tr><th>Operator</th><th>Distance Type</th><th>Use When</th></tr>
+      <tr><td><code>&lt;-&gt;</code></td><td>Euclidean (L2) distance</td><td>Embeddings not normalized</td></tr>
+      <tr><td><code>&lt;#&gt;</code></td><td>Negative inner product</td><td>Normalized embeddings, fastest</td></tr>
+      <tr><td><code>&lt;=&gt;</code></td><td>Cosine distance (1 - cosine_sim)</td><td>Semantic similarity (your use case)</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">Querying pgvector &mdash; finding K nearest neighbors</div>
+<pre><code class="language-sql">SELECT
+    ui.input_text,
+    p.prediction_label,
+    1 - (e.embedding <=> $1::vector) AS similarity
+FROM embeddings e
+JOIN user_inputs ui ON ui.id = e.input_id
+JOIN predictions p  ON p.input_id = ui.id
+WHERE e.input_type = 'lead_message'
+  AND e.user_id = $2::uuid
+ORDER BY e.embedding <=> $1::vector  -- ORDER BY cosine distance (smaller = more similar)
+LIMIT 5;
+
+-- Python side:
+# embedding = model.encode(["query text"])[0].tolist()  # [384 floats]
+# rows = await conn.fetch(query, embedding, user_id)</code></pre>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>IVFFlat vs HNSW Index</h2></div>
+  <div class="card-body">
+    <table>
+      <tr><th>Feature</th><th>IVFFlat (your schema)</th><th>HNSW (modern alternative)</th></tr>
+      <tr><td>Algorithm</td><td>Partition into N clusters, search nearest cluster</td><td>Hierarchical navigable small world graph</td></tr>
+      <tr><td>Build time</td><td>Fast</td><td>Slow (but query is faster)</td></tr>
+      <tr><td>Query speed</td><td>Good</td><td>Excellent</td></tr>
+      <tr><td>lists parameter</td><td>Set to sqrt(n_rows). 100 = good for &lt;1M rows</td><td>m=16, ef_construction=64</td></tr>
+    </table>
+    <div class="callout info">HNSW syntax: <code>USING hnsw (embedding vector_cosine_ops) WITH (m=16, ef_construction=64)</code>. Added in pgvector 0.5.0+.</div>
+  </div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q1: Why are primary keys UUID instead of serial (auto-increment integer)?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="pgq1" value="0"><label>UUIDs are faster to index than integers</label></div>
+    <div class="opt"><input type="radio" name="pgq1" value="1"><label>UUIDs are non-sequential (not guessable), can be generated without a DB round-trip, and are safe for distributed systems with no ID conflicts.</label></div>
+    <div class="opt"><input type="radio" name="pgq1" value="2"><label>UUID is required for pgvector to work</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ('pgq1',1,'Serial integers are guessable (increment by 1). UUIDs are cryptographically random 128-bit values. gen_random_uuid() needs pgcrypto extension. You can generate the UUID in Python before inserting, avoiding a round-trip to get LAST_INSERT_ID().')">Check Answer</button>
+  <div class="feedback" id="fb-pgq1"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q2: What does <code>embedding vector(384)</code> mean, and what is 384?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="pgq2" value="0"><label>384 is the maximum text length to embed</label></div>
+    <div class="opt"><input type="radio" name="pgq2" value="1"><label>vector(384) stores an array of 384 floats. 384 is the output dimension of all-MiniLM-L6-v2 &mdash; every text it encodes becomes exactly 384 floats.</label></div>
+    <div class="opt"><input type="radio" name="pgq2" value="2"><label>384 is the maximum number of vectors in the index</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ('pgq2',1,'all-MiniLM-L6-v2 always outputs 384-dimensional embeddings. The dimension must match at column definition time. Other common dimensions: OpenAI text-embedding-3-small = 1536, all-mpnet-base-v2 = 768.')">Check Answer</button>
+  <div class="feedback" id="fb-pgq2"></div>
+</div>
+
+
+<!-- ==================== SENTENCE-TRANSFORMERS + FAISS ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="s-title">&#127302; sentence-transformers + FAISS</h1>
+<p class="s-intro">Used in your AI Market Research Copilot. sentence-transformers converts text to semantic embeddings; FAISS performs lightning-fast nearest-neighbor search.</p>
+
+<div class="card">
+  <div class="card-header"><h2>sentence-transformers &mdash; What It Does</h2></div>
+  <div class="card-body">
+    <p><code>all-MiniLM-L6-v2</code> maps any sentence to a 384-D vector where <strong>semantically similar sentences have vectors that are close together</strong>:</p>
+    <ul>
+      <li>"I want to sell my coaching program online" &rarr; [0.12, -0.43, 0.87, ...] (384 floats)</li>
+      <li>"monetize my mentoring service on the internet" &rarr; [0.11, -0.45, 0.86, ...] (very close!)</li>
+      <li>TF-IDF gives these a score of 0 (no shared keywords). sentence-transformers gives cosine similarity &asymp; 0.92.</li>
+    </ul>
+    <p><strong>Why all-MiniLM-L6-v2?</strong> 384 dims (small = fast), runs on CPU, ~22MB, free, open source, excellent quality for English text.</p>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">FAISS vector store pattern from your market research copilot</div>
+<pre><code class="language-python">import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+class FAISSVectorStore:
+    def __init__(self, dim: int = 384):
+        # IndexFlatIP: exact inner product search
+        # = cosine similarity when embeddings are normalized
+        self.index = faiss.IndexFlatIP(dim)
+        self.texts = []      # parallel list: texts[i] = vector i
+        self.metadata = []
+
+    def add_texts(self, texts: list[str], metadata: list[dict]):
+        embeddings = model.encode(texts, normalize_embeddings=True)
+        # FAISS requires float32 C-contiguous array
+        embeddings = np.array(embeddings, dtype=np.float32)
+        self.index.add(embeddings)
+        self.texts.extend(texts)
+        self.metadata.extend(metadata)
+
+    def search(self, query: str, k: int = 5) -> list[dict]:
+        query_emb = model.encode([query], normalize_embeddings=True)
+        query_emb = np.array(query_emb, dtype=np.float32)
+
+        # D = inner product scores (0-1 for normalized vectors)
+        # I = indices into self.texts
+        D, I = self.index.search(query_emb, k)
+
+        results = []
+        for score, idx in zip(D[0], I[0]):
+            if idx == -1: continue  # no result
+            results.append({
+                "text": self.texts[idx],
+                "score": float(score),
+                "metadata": self.metadata[idx]
+            })
+        return results  # sorted by score descending</code></pre>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: Why use <code>normalize_embeddings=True</code> and <code>IndexFlatIP</code> together?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="emq1" value="0"><label>They are both defaults that can be changed independently</label></div>
+    <div class="opt"><input type="radio" name="emq1" value="1"><label>When embeddings are normalized (unit length), inner product equals cosine similarity. IndexFlatIP with normalized vectors gives exact cosine similarity search.</label></div>
+    <div class="opt"><input type="radio" name="emq1" value="2"><label>normalize_embeddings=True is required for FAISS to work</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ('emq1',1,'cosine_similarity(a,b) = dot(a,b) / (|a|*|b|). When both vectors are unit-normalized (|a|=|b|=1), the denominator is 1, so cosine_similarity = dot(a,b) = inner product. This lets you use the faster IP index for cosine similarity without computing norms at query time.')">Check Answer</button>
+  <div class="feedback" id="fb-emq1"></div>
+</div>
+
+
+<!-- ==================== RAG PIPELINE ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="s-title">&#129521; RAG Pipeline &mdash; Retrieval-Augmented Generation</h1>
+<p class="s-intro">RAG is the architectural pattern powering your AI Market Research Copilot. Instead of asking an LLM to answer from memory (hallucinations), you first retrieve relevant context from your own documents.</p>
+
+<div class="card">
+  <div class="card-header"><h2>Why RAG?</h2></div>
+  <div class="card-body">
+    <p><strong>Without RAG:</strong> "What are the top 3 competitors in our report?" &rarr; LLM makes up plausible-sounding but wrong answers.</p>
+    <p><strong>With RAG:</strong> Find 5 most relevant chunks from your uploaded report &rarr; inject into LLM prompt &rarr; LLM generates answer grounded in actual document content.</p>
+    <div class="flow">
+      <div class="flow-node">User Query</div><span class="flow-arrow">&#8594;</span>
+      <div class="flow-node">Embed Query</div><span class="flow-arrow">&#8594;</span>
+      <div class="flow-node">FAISS Search</div><span class="flow-arrow">&#8594;</span>
+      <div class="flow-node">Top-K Chunks</div><span class="flow-arrow">&#8594;</span>
+      <div class="flow-node">Build Prompt</div><span class="flow-arrow">&#8594;</span>
+      <div class="flow-node">LLM (Gemini)</div><span class="flow-arrow">&#8594;</span>
+      <div class="flow-node">Cited Answer</div>
+    </div>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">Step 1+2: Document parsing and chunking</div>
+<pre><code class="language-python">import PyPDF2
+
+def parse_document(file_path: str, content_type: str) -> str:
+    if content_type == "application/pdf":
+        reader = PyPDF2.PdfReader(file_path)
+        return "\n".join(page.extract_text() for page in reader.pages)
+    else:
+        return open(file_path).read()
+
+# Chunking with overlap: important context at chunk boundaries is not lost
+def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + chunk_size
+        chunk = text[start:end]
+        if chunk.strip():
+            chunks.append(chunk)
+        start = end - overlap  # move forward by (chunk_size - overlap)
+    return chunks</code></pre>
+</div>
+
+<div class="code-card">
+  <div class="code-header">Step 5+6: Retrieval + augmented generation (RAG core)</div>
+<pre><code class="language-python">import google.generativeai as genai
+
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+llm = genai.GenerativeModel("gemini-1.5-flash")
+
+def rag_answer(query: str, store: FAISSVectorStore, k: int = 5) -> dict:
+    results = store.search(query, k=k)
+
+    context = "\n\n---\n\n".join(
+        f"[Source chunk {i+1}]:\n{r['text']}"
+        for i, r in enumerate(results)
+    )
+
+    prompt = f"""You are a market research analyst. Answer the question using ONLY
+the provided context. If the answer is not in the context, say so.
+
+CONTEXT:
+{context}
+
+QUESTION: {query}
+
+Provide a structured answer with specific evidence from the context."""
+
+    response = llm.generate_content(prompt)
+    return {
+        "answer": response.text,
+        "sources": [r["text"][:200] for r in results],
+        "num_chunks_retrieved": len(results)
+    }</code></pre>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: Why use 50-char overlap between 500-char chunks?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="ragq1" value="0"><label>Overlap makes search faster by having more chunks to match</label></div>
+    <div class="opt"><input type="radio" name="ragq1" value="1"><label>Context at chunk boundaries matters. A sentence split across chunk 1 and chunk 2 loses meaning in both. Overlap ensures critical boundary context appears complete in at least one chunk.</label></div>
+    <div class="opt"><input type="radio" name="ragq1" value="2"><label>Overlap is required by FAISS for correct indexing</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ('ragq1',1,'Imagine: "...revenue grew 40% in 2024 | [chunk boundary] driven by enterprise sales...". Chunk 1 ends with a number. Chunk 2 starts with the explanation. Neither tells the complete story. With 50-char overlap, chunk 2 starts 50 chars before the boundary, preserving the full insight. Common chunk sizes: 200-500 chars; common overlap: 10-20% of chunk size.')">Check Answer</button>
+  <div class="feedback" id="fb-ragq1"></div>
+</div>
+
+
+<!-- ==================== SYSTEM DESIGN ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="s-title">&#127959; System Design Patterns</h1>
+<p class="s-intro">From your KeaBuilder AI system design answers. These patterns appear in your code and docs, and are essential for senior engineer interviews.</p>
+
+<div class="card">
+  <div class="card-header"><h2>Strategy + Factory + ABC Pattern</h2></div>
+  <div class="card-body">
+    <p>The Strategy pattern defines a family of algorithms, encapsulates each, and makes them interchangeable. <code>BaseLLMClient</code> is the interface; <code>ClaudeClient</code> and <code>OpenAIClient</code> are concrete strategies.</p>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">Factory + Strategy + ABC from your code</div>
+<pre><code class="language-python">from abc import ABC, abstractmethod
+
+class BaseLLMClient(ABC):
+    @abstractmethod
+    async def generate_review(self, prompt: str) -> str: ...
+
+    @abstractmethod
+    async def parse_review_response(self, raw: str) -> dict: ...
+
+class ClaudeClient(BaseLLMClient):
+    async def generate_review(self, prompt: str) -> str:
+        # Anthropic-specific with prompt caching
+        ...
+
+class OpenAIClient(BaseLLMClient):
+    async def generate_review(self, prompt: str) -> str:
+        # OpenAI-specific with JSON mode
+        ...
+
+def _build_llm_client() -> BaseLLMClient:
+    provider = get_settings().llm_provider
+    if provider == "openai":
+        return OpenAIClient()
+    return ClaudeClient()  # default
+
+class ReviewService:
+    def __init__(self):
+        self._llm = _build_llm_client()  # never knows which provider
+
+    async def run_review(self, ...):
+        raw = await self._llm.generate_review(prompt)</code></pre>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>3-Layer Fallback Strategy</h2></div>
+  <div class="card-body">
+    <ul>
+      <li><strong>Layer 1 &mdash; Retry with exponential backoff:</strong> Try same provider 3x with delays 1s, 2s, 4s.</li>
+      <li><strong>Layer 2 &mdash; Provider fallback:</strong> If primary exhausts retries, switch to backup provider.</li>
+      <li><strong>Layer 3 &mdash; Job queue:</strong> If all providers fail, push to SQS/BullMQ. User gets: "Content queued, we'll notify you."</li>
+    </ul>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">3-layer fallback (JavaScript pseudocode)</div>
+<pre><code class="language-javascript">async function generateWithFallback(request) {
+  const providers = [primaryProvider, backupProvider];
+
+  for (const provider of providers) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        return await withTimeout(provider.generate(request), 30_000);
+      } catch (err) {
+        if (attempt < 3) {
+          await sleep(attempt * 1000);  // 1s, 2s
+        }
+      }
+    }
+  }
+
+  // Layer 3: all providers exhausted
+  await jobQueue.add('generate', request, { delay: 60_000 });
+  return { status: 'queued', message: 'Content queued. You will be notified.' };
+}</code></pre>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>High-Volume AI Architecture</h2></div>
+  <div class="card-body">
+    <table>
+      <tr><th>Component</th><th>Technology</th><th>Purpose</th></tr>
+      <tr><td>API Gateway</td><td>AWS API GW / Nginx</td><td>Rate limiting per user/IP</td></tr>
+      <tr><td>Request Queue</td><td>SQS / BullMQ</td><td>Decouple API from workers; absorb spikes</td></tr>
+      <tr><td>Worker Pool</td><td>Lambda / ECS</td><td>Auto-scale on queue depth</td></tr>
+      <tr><td>Result Cache</td><td>Redis (1hr TTL)</td><td>Cache identical prompts &mdash; 30-40% API cost savings</td></tr>
+      <tr><td>Storage</td><td>S3 + CloudFront</td><td>Store generated content, serve via CDN</td></tr>
+    </table>
+    <div class="callout tip">Cache key = hash(model + prompt). Identical prompts within 1hr return cached result. No AI call. 30-40% savings at scale.</div>
+  </div>
+</div>
+
+
+<!-- ==================== DOCKER ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="s-title">&#128038; Docker &amp; Deployment</h1>
+
+<div class="code-card">
+  <div class="code-header">Dockerfile.backend &mdash; explained line by line</div>
+<pre><code class="language-bash">FROM python:3.11-slim
+# python:3.11-slim = minimal Python image (~150MB vs 900MB for full)
+
+WORKDIR /app
+
+# COPY requirements FIRST (before source code).
+# Docker layers are cached. If requirements.txt doesn't change,
+# the pip install layer is reused from cache = fast rebuilds.
+COPY backend/requirements.txt backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
+# Now copy source code (changes more often than requirements)
+COPY backend/ backend/
+
+EXPOSE 8000
+
+# Use array form (exec form) so signals (SIGTERM) work correctly
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+</div>
+
+<div class="code-card">
+  <div class="code-header">docker-compose.yml &mdash; two-container orchestration</div>
+<pre><code class="language-bash">version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"   # host_port:container_port
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./data:/app/data  # persists uploads + FAISS indexes across restarts
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "8501:8501"
+    environment:
+      # 'backend' = Docker service name (DNS)
+      # localhost inside frontend container = the frontend itself, NOT the backend
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend</code></pre>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">Q: In docker-compose, the frontend uses <code>BACKEND_URL=http://backend:8000</code>. Why <code>backend</code> instead of <code>localhost</code>?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="dq1" value="0"><label>localhost always refers to the Docker host, so you need the container's IP</label></div>
+    <div class="opt"><input type="radio" name="dq1" value="1"><label>Each container has its own network namespace. localhost inside the frontend container = the frontend itself. Docker Compose creates an internal DNS where service names resolve to the correct container IP.</label></div>
+    <div class="opt"><input type="radio" name="dq1" value="2"><label>localhost is reserved for the database in Docker</label></div>
+  </div>
+  <button class="check-btn" onclick="checkQ('dq1',1,'In Docker, each container has an isolated network stack. localhost inside frontend = the frontend container itself, not the backend. Docker Compose creates a shared network where service names act as hostnames. http://backend:8000 resolves to the backend container IP.')">Check Answer</button>
+  <div class="feedback" id="fb-dq1"></div>
+</div>
+
+
+<!-- ==================== STREAMLIT ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="s-title">&#127775; Streamlit &mdash; Python-Native Web UI</h1>
+
+<div class="card">
+  <div class="card-header"><h2>How Streamlit Works</h2></div>
+  <div class="card-body">
+    <p>Every time a user interacts, Streamlit <strong>re-runs the entire script from top to bottom</strong>. State that must persist across reruns lives in <code>st.session_state</code>.</p>
+  </div>
+</div>
+
+<div class="code-card">
+  <div class="code-header">Key Streamlit patterns from your Market Research Copilot</div>
+<pre><code class="language-python">import streamlit as st
+import requests
+
+st.set_page_config(
+    page_title="AI Market Research Copilot",
+    layout="wide",
+)
+
+# session_state persists across reruns
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
+if "documents" not in st.session_state:
+    st.session_state.documents = []
+
+# File uploader
+uploaded = st.file_uploader(
+    "Upload market research documents",
+    type=["pdf", "csv", "txt"],
+    accept_multiple_files=True
+)
+if uploaded:
+    for file in uploaded:
+        resp = requests.post(
+            f"{BACKEND_URL}/api/v1/upload/",
+            files={"file": (file.name, file.read(), file.type)},
+            data={"session_id": st.session_state.session_id}
+        )
+        if resp.ok:
+            st.session_state.documents.append(resp.json())
+            st.success(f"Indexed {file.name}")
+
+# Tabs
+tab1, tab2, tab3 = st.tabs(["Overview", "Analysis", "Chat"])
+with tab3:
+    query = st.text_input("Ask about your documents:")
+    if st.button("Ask") and query:
+        with st.spinner("Analyzing..."):
+            resp = requests.post(f"{BACKEND_URL}/api/v1/chat/",
+                                 json={"query": query, "session_id": st.session_state.session_id})
+        st.markdown(resp.json()["answer"])
+
+# Multi-page: create files in pages/ directory
+# pages/1_Upload.py, pages/2_Research.py, pages/3_Report.py
+# Streamlit auto-discovers them as navigation items</code></pre>
+</div>
+
+
+<!-- ==================== PYTHON ASYNC/AWAIT ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="s-title">&#9889; Python Async/Await</h1>
+
+<div class="code-card">
+  <div class="code-header">async/await &mdash; complete mental model</div>
+<pre><code class="language-python">import asyncio
+
+async def fetch_data(url: str) -> dict:
+    # await suspends THIS coroutine, giving up the event loop
+    # to run other coroutines while waiting for the HTTP response.
+    # The thread is NOT blocked.
+    response = await httpx.AsyncClient().get(url)
+    return response.json()
+
+# Running multiple tasks CONCURRENTLY
+async def main():
+    # asyncio.gather runs all 3 coroutines concurrently
+    # Total time = max(t1, t2, t3), NOT t1+t2+t3
+    results = await asyncio.gather(
+        fetch_data("https://api1.example.com"),
+        fetch_data("https://api2.example.com"),
+        fetch_data("https://api3.example.com"),
+    )
+
+# Common mistake:
+async def bad():
+    time.sleep(5)  # WRONG: blocks the entire event loop!
+
+async def good():
+    await asyncio.sleep(5)  # yields control while sleeping
+
+# In FastAPI: use async def for any endpoint that does I/O
+@app.post("/review")
+async def trigger_review(body: ReviewRequest):
+    review, review_id = await review_svc.run_review(
+        body.repo_name, body.pr_number
+    )
+    return {"review_id": review_id}</code></pre>
+</div>
+
+
+<!-- ==================== QUIZ ARENA ==================== -->
+<hr style="border:1px solid #30363d;margin:3rem 0;">
+<h1 class="s-title">&#127919; Quiz Arena &mdash; Final Assessment (20 Questions)</h1>
+<p class="s-intro">Test your mastery across all 4 projects. These questions mirror real interview and assessment questions.</p>
+
+<div class="quiz-q">
+  <p class="q-text">1. What index type does <code>USING ivfflat</code> create in pgvector?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa1" value="0"><label>Exact nearest neighbor (ENN)</label></div>
+    <div class="opt"><input type="radio" name="qa1" value="1"><label>Approximate nearest neighbor (ANN)</label></div>
+    <div class="opt"><input type="radio" name="qa1" value="2"><label>Binary search tree index</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa1',1,'ivfflat is an Approximate Nearest Neighbor (ANN) index. It trades small recall accuracy for massive speedup. It partitions vectors into N clusters (lists) and only searches nearest clusters.')">Check</button>
+  <div class="feedback" id="fb-qa1"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">2. What does <code>message.content[0].text</code> return after a Claude API call?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa2" value="0"><label>The system prompt that was sent</label></div>
+    <div class="opt"><input type="radio" name="qa2" value="1"><label>The raw text of Claude's response (a JSON string in your case)</label></div>
+    <div class="opt"><input type="radio" name="qa2" value="2"><label>The number of tokens used</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa2',1,'message.content is a list of content blocks. content[0] is a TextBlock with .text = Claude\'s full response. In your code that response is a JSON string. message.usage has the token counts.')">Check</button>
+  <div class="feedback" id="fb-qa2"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">3. With <code>logs: Annotated[list[str], operator.add]</code>, nodes A and B each return <code>{"logs": ["A"]}</code> and <code>{"logs": ["B"]}</code>. What is the final logs?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa3" value="0"><label>Node B's logs replace node A's</label></div>
+    <div class="opt"><input type="radio" name="qa3" value="1"><label>Both appended: ["A", "B"]</label></div>
+    <div class="opt"><input type="radio" name="qa3" value="2"><label>An error is raised</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa3',1,'Annotated[list[str], operator.add] defines a reducer. LangGraph applies operator.add(["A"], ["B"]) = ["A", "B"]. This is how your 6-node pipeline accumulates all log entries into a single final list.')">Check</button>
+  <div class="feedback" id="fb-qa3"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">4. TF-IDF gives cosine similarity 0.0 between "sell coaching programs" and "monetize mentoring online". Why?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa4" value="0"><label>Sentences are too short for TF-IDF</label></div>
+    <div class="opt"><input type="radio" name="qa4" value="1"><label>TF-IDF is keyword-based. These share zero words (ignoring stop words), so their vectors have no overlapping dimensions &mdash; dot product = 0.</label></div>
+    <div class="opt"><input type="radio" name="qa4" value="2"><label>Cosine similarity of 0 means the sentences are identical</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa4',1,'TF-IDF measures keyword overlap, not semantic meaning. "sell" and "monetize" are synonyms but TF-IDF treats them as completely different dimensions. sentence-transformers solves this by encoding meaning into dense vectors.')">Check</button>
+  <div class="feedback" id="fb-qa4"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">5. Why does FAISS code use <code>dtype=np.float32</code> instead of float64?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa5" value="0"><label>float32 is more accurate for ML</label></div>
+    <div class="opt"><input type="radio" name="qa5" value="1"><label>FAISS requires float32 internally. Also, float32 uses half the memory and the extra precision of float64 provides no practical benefit for embeddings.</label></div>
+    <div class="opt"><input type="radio" name="qa5" value="2"><label>float32 is a Python optimization</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa5',1,'FAISS is a C++ library that strictly requires float32. Passing float64 raises a TypeError. Memory: 1M vectors * 384 dims * 4 bytes = 1.5GB in float32; float64 would be 3GB for no meaningful gain.')">Check</button>
+  <div class="feedback" id="fb-qa5"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">6. Your RAG prompt says "Answer using ONLY the provided context." Why is this critical?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa6" value="0"><label>It makes the LLM response shorter</label></div>
+    <div class="opt"><input type="radio" name="qa6" value="1"><label>Without it, the LLM blends training knowledge with retrieved context, generating confident-sounding hallucinations. Grounding to context makes the answer traceable to actual documents.</label></div>
+    <div class="opt"><input type="radio" name="qa6" value="2"><label>It prevents the LLM from using tool calls</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa6',1,'LLMs have strong prior beliefs from training. Without grounding, they may override retrieved facts with training data. "Use ONLY the provided context" forces the model to treat retrieved chunks as ground truth.')">Check</button>
+  <div class="feedback" id="fb-qa6"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">7. What does <code>ON DELETE CASCADE</code> on a foreign key do?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa7" value="0"><label>Speeds up DELETE queries</label></div>
+    <div class="opt"><input type="radio" name="qa7" value="1"><label>When a parent row is deleted, all child rows are automatically deleted, preventing orphaned records.</label></div>
+    <div class="opt"><input type="radio" name="qa7" value="2"><label>Prevents deletion of rows that have children</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa7',1,'ON DELETE CASCADE propagates deletes down the chain. DELETE user also deletes their user_inputs, which cascades to predictions and embeddings. Alternative: ON DELETE RESTRICT prevents deletion if children exist.')">Check</button>
+  <div class="feedback" id="fb-qa7"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">8. What happens to data written to a container without a volume mount when the container stops?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa8" value="0"><label>Saved to host filesystem automatically</label></div>
+    <div class="opt"><input type="radio" name="qa8" value="1"><label>Lives in container's ephemeral writable layer and is permanently lost.</label></div>
+    <div class="opt"><input type="radio" name="qa8" value="2"><label>Backed up to Docker Hub</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa8',1,'Containers are ephemeral by default. Data written to the container filesystem is lost on stop/restart. Your docker-compose.yml mounts - ./data:/app/data so uploads and FAISS indexes persist on the host.')">Check</button>
+  <div class="feedback" id="fb-qa8"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">9. Why use <code>@lru_cache</code> on <code>get_settings()</code>?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa9" value="0"><label>Caches API responses from external services</label></div>
+    <div class="opt"><input type="radio" name="qa9" value="1"><label>Ensures Settings() is only instantiated once (singleton). Every call returns the same cached object instead of re-reading and re-validating env vars.</label></div>
+    <div class="opt"><input type="radio" name="qa9" value="2"><label>Required by pydantic-settings</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa9',1,'lru_cache caches the return value. First call creates Settings. Every subsequent call returns the cached instance. Without it, every API request would re-read os.environ &mdash; wasted CPU on every single request.')">Check</button>
+  <div class="feedback" id="fb-qa9"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">10. In Streamlit, when does <code>st.session_state</code> get cleared?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa10" value="0"><label>After every user interaction (re-run)</label></div>
+    <div class="opt"><input type="radio" name="qa10" value="1"><label>When the browser tab is closed or refreshed (new session)</label></div>
+    <div class="opt"><input type="radio" name="qa10" value="2"><label>When the Streamlit script is re-imported</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa10',1,'session_state persists across reruns within the same browser session. It is cleared when the user closes/refreshes the tab (new session) or when the server restarts. This is why you initialize state with "if key not in st.session_state" checks.')">Check</button>
+  <div class="feedback" id="fb-qa10"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">11. What is the purpose of <code>graph.set_entry_point("fetch_diff")</code> in LangGraph?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa11" value="0"><label>It sets the name of the graph</label></div>
+    <div class="opt"><input type="radio" name="qa11" value="1"><label>It designates which node runs first when you call ainvoke()</label></div>
+    <div class="opt"><input type="radio" name="qa11" value="2"><label>It creates the fetch_diff node automatically</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa11',1,'set_entry_point("fetch_diff") tells the compiled graph: when ainvoke() is called, start execution at the fetch_diff node. Without this, LangGraph doesn\'t know which node to run first.')">Check</button>
+  <div class="feedback" id="fb-qa11"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">12. Why copy <code>requirements.txt</code> BEFORE copying source code in a Dockerfile?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa12" value="0"><label>Requirements must be installed before code can run</label></div>
+    <div class="opt"><input type="radio" name="qa12" value="1"><label>Docker caches each layer. If requirements.txt hasn't changed, Docker reuses the cached pip install layer. Copying source code first would invalidate the cache on every code change.</label></div>
+    <div class="opt"><input type="radio" name="qa12" value="2"><label>Docker requires this order to build correctly</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa12',1,'Docker layer caching: each instruction creates a cached layer. If a layer\'s input hasn\'t changed, Docker reuses it. requirements.txt changes rarely; source code changes constantly. Copying requirements first ensures pip install is cached across code-only changes, dramatically speeding up rebuilds.')">Check</button>
+  <div class="feedback" id="fb-qa12"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">13. What does <code>asyncio.gather()</code> do vs running tasks sequentially?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa13" value="0"><label>gather() runs tasks on multiple CPU threads in parallel</label></div>
+    <div class="opt"><input type="radio" name="qa13" value="1"><label>gather() runs coroutines concurrently on a single thread. Total time = max(t1,t2,t3), not sum. Sequential = t1+t2+t3.</label></div>
+    <div class="opt"><input type="radio" name="qa13" value="2"><label>gather() is just syntactic sugar for sequential execution</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa13',1,'asyncio.gather() runs all coroutines concurrently on the single-threaded event loop. When one awaits I/O, others run. 3 API calls each taking 2 seconds: sequential = 6s, gather = ~2s. This is concurrency, not parallelism (no multiple threads).')">Check</button>
+  <div class="feedback" id="fb-qa13"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">14. In your lead classifier, what does setting <code>confidence: 0.92</code> in the Claude JSON response represent?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa14" value="0"><label>Claude computed a mathematical softmax probability</label></div>
+    <div class="opt"><input type="radio" name="qa14" value="1"><label>Claude's self-reported estimate following your prompt's JSON schema instructions &mdash; not a calibrated probability</label></div>
+    <div class="opt"><input type="radio" name="qa14" value="2"><label>The TF-IDF cosine similarity score</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa14',1,'Your prompt instructs Claude to include a confidence field. Claude fills it based on its reasoning ("multiple strong signals"). This is instructed JSON output, not a calibrated softmax probability. You can validate range with Pydantic: Field(..., ge=0.0, le=1.0).')">Check</button>
+  <div class="feedback" id="fb-qa14"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">15. What is the cosine distance operator in pgvector and how does it relate to cosine similarity?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa15" value="0"><label>&lt;=&gt; returns cosine similarity directly</label></div>
+    <div class="opt"><input type="radio" name="qa15" value="1"><label>&lt;=&gt; returns cosine DISTANCE = 1 - cosine_similarity. To get similarity you compute 1 - (e.embedding &lt;=&gt; $1::vector).</label></div>
+    <div class="opt"><input type="radio" name="qa15" value="2"><label>&lt;=&gt; returns Euclidean distance</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa15',1,'pgvector <=> is cosine distance (1 - cosine_similarity). Range: 0 (identical) to 2 (opposite). To get similarity: 1 - distance. Your SQL uses: 1 - (e.embedding <=> $1::vector) AS similarity in the SELECT while ORDER BY e.embedding <=> ... (smaller distance = more similar).')">Check</button>
+  <div class="feedback" id="fb-qa15"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">16. Why does the Factory <code>_build_llm_client()</code> return <code>BaseLLMClient</code> (the ABC) instead of the concrete type?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa16" value="0"><label>BaseLLMClient has faster methods than the concrete classes</label></div>
+    <div class="opt"><input type="radio" name="qa16" value="1"><label>Returning the interface type means callers only depend on the contract (generate_review, parse_review_response), not the specific implementation. You can swap providers without changing callers.</label></div>
+    <div class="opt"><input type="radio" name="qa16" value="2"><label>Python requires returning the ABC type from factory functions</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa16',1,'This is the Open/Closed Principle: code is open for extension (add OpenAIClient, GeminiClient) but closed for modification (callers don\'t change). ReviewService calls self._llm.generate_review() without ever knowing if it\'s Claude or OpenAI underneath.')">Check</button>
+  <div class="feedback" id="fb-qa16"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">17. What does <code>model_dump()</code> do on a Pydantic model?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa17" value="0"><label>Saves the model to a JSON file on disk</label></div>
+    <div class="opt"><input type="radio" name="qa17" value="1"><label>Converts the Pydantic model instance to a plain Python dict, serializing all fields including nested models.</label></div>
+    <div class="opt"><input type="radio" name="qa17" value="2"><label>Validates all fields again against their type constraints</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa17',1,'model_dump() (renamed from dict() in Pydantic v2) returns a plain dict. Nested models are also recursively converted to dicts. This is what you use before MongoDB insert_one() or JSON serialization.')">Check</button>
+  <div class="feedback" id="fb-qa17"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">18. What prevents hmac.compare_digest from being vulnerable to timing attacks?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa18" value="0"><label>It uses a cryptographic hash internally</label></div>
+    <div class="opt"><input type="radio" name="qa18" value="1"><label>It always compares all bytes regardless of where they differ, taking constant time. Regular == short-circuits at first mismatch, leaking timing information.</label></div>
+    <div class="opt"><input type="radio" name="qa18" value="2"><label>It encrypts both strings before comparing</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa18',1,'Constant-time comparison: compare_digest compares ALL bytes of both strings before returning, regardless of where they first differ. This means an attacker cannot measure response time to learn how many bytes of a forged signature are correct.')">Check</button>
+  <div class="feedback" id="fb-qa18"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">19. In Motor, how do you fetch multiple documents from a cursor?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa19" value="0"><label>await collection.find(filter).to_list(limit)</label></div>
+    <div class="opt"><input type="radio" name="qa19" value="1"><label>collection.find(filter) returns results directly</label></div>
+    <div class="opt"><input type="radio" name="qa19" value="2"><label>await collection.find_many(filter, limit)</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa19',0,'Motor\'s find() returns an async cursor. You must await cursor.to_list(n) to fetch results into a Python list. Unlike PyMongo, you cannot iterate it synchronously. .limit(n) and .skip(n) are chained before to_list().')">Check</button>
+  <div class="feedback" id="fb-qa19"></div>
+</div>
+
+<div class="quiz-q">
+  <p class="q-text">20. What does the <code>lists=100</code> parameter in the IVFFlat index mean?</p>
+  <div class="options">
+    <div class="opt"><input type="radio" name="qa20" value="0"><label>Maximum number of results to return per query</label></div>
+    <div class="opt"><input type="radio" name="qa20" value="1"><label>Number of clusters (partitions) in the index. Vectors are assigned to their nearest cluster centroid. At query time, only the nearest clusters are searched. Rule of thumb: sqrt(total_rows).</label></div>
+    <div class="opt"><input type="radio" name="qa20" value="2"><label>Number of dimensions to index (out of 384)</label></div>
+  </div>
+  <button class="check-btn" onclick="arenaQ('qa20',1,'IVFFlat partitions the vector space into lists=100 clusters using k-means. Each vector is assigned to its nearest centroid. At query time, the nearest N clusters are searched (controlled by ivfflat.probes). More lists = faster queries but lower recall. Rule of thumb: lists = sqrt(n_rows).')">Check</button>
+  <div class="feedback" id="fb-qa20"></div>
+</div>
+
+<button class="check-btn" style="width:100%;padding:0.8rem;font-size:1rem;margin-top:1.5rem" onclick="showFinalScore()">&#127919; Show My Final Score</button>
+
+<div id="arena-result" style="display:none" class="quiz-score">
+  <h2 id="arena-score"></h2>
+  <p style="color:var(--t2);margin-top:0.5rem;">Review incorrect answers above and re-read those sections to solidify understanding.</p>
+  <p style="color:var(--t2);margin-top:0.5rem;">&#8592; <a href="index.html" style="color:var(--blue)">Back to Part 1</a> &nbsp;&nbsp; <a href="part2.html" style="color:var(--blue)">Back to Part 2</a></p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script>
+let arenaScore = 0;
+let arenaAnswered = {};
+
+function checkQ(name, correct, explanation) {
+  const radios = document.querySelectorAll('input[name="' + name + '"]');
+  let selected = -1;
+  radios.forEach(r => { if (r.checked) selected = parseInt(r.value); });
+  if (selected === -1) { alert('Please select an answer!'); return; }
+  const fb = document.getElementById('fb-' + name);
+  if (!fb) return;
+  fb.style.display = 'block';
+  if (selected === correct) {
+    fb.className = 'feedback correct';
+    fb.innerHTML = '&#9989; <strong>Correct!</strong> ' + explanation;
+  } else {
+    fb.className = 'feedback wrong';
+    fb.innerHTML = '&#10060; <strong>Incorrect.</strong> ' + explanation;
+  }
+  radios.forEach(r => r.disabled = true);
+}
+
+function arenaQ(name, correct, explanation) {
+  const radios = document.querySelectorAll('input[name="' + name + '"]');
+  let selected = -1;
+  radios.forEach(r => { if (r.checked) selected = parseInt(r.value); });
+  if (selected === -1) { alert('Please select an answer!'); return; }
+  if (arenaAnswered[name]) return;
+  arenaAnswered[name] = true;
+  const fb = document.getElementById('fb-' + name);
+  if (!fb) return;
+  fb.style.display = 'block';
+  if (selected === correct) {
+    arenaScore++;
+    fb.className = 'feedback correct';
+    fb.innerHTML = '&#9989; <strong>Correct!</strong> ' + explanation;
+  } else {
+    fb.className = 'feedback wrong';
+    fb.innerHTML = '&#10060; <strong>Incorrect.</strong> Correct: option ' + (correct+1) + '. ' + explanation;
+  }
+  radios.forEach(r => r.disabled = true);
+}
+
+function showFinalScore() {
+  const total = 20;
+  const pct = Math.round((arenaScore / total) * 100);
+  const el = document.getElementById('arena-result');
+  const scoreEl = document.getElementById('arena-score');
+  el.style.display = 'block';
+  let grade = pct >= 90 ? '&#127881; Outstanding! Interview-ready.' :
+              pct >= 70 ? '&#129395; Good! Review the missed questions.' :
+              pct >= 50 ? '&#128218; Keep studying! Re-read weak sections.' :
+                          '&#128073; Start over from Part 1 and take notes.';
+  scoreEl.textContent = 'Score: ' + arenaScore + '/' + total + ' (' + pct + '%) ' + grade;
+  el.scrollIntoView({behavior: 'smooth'});
+}
+
+if (typeof Prism !== 'undefined') Prism.highlightAll();
+</script>
+</body>
+</html>
