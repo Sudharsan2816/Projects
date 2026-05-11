@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume Project Learning Platform | Sudharsan</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+<style>
+:root{
+--bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#22272e;
+--t1:#e6edf3;--t2:#8b949e;--t3:#6e7681;
+--blue:#58a6ff;--green:#3fb950;--orange:#d29922;
+--purple:#bc8cff;--red:#f85149;--cyan:#39d353;
+--border:#30363d;--sw:280px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--t1);font-size:15px;}
+#app{display:flex;height:100vh;overflow:hidden;}
+
+/* SIDEBAR */
+#sidebar{width:var(--sw);min-width:var(--sw);height:100vh;overflow-y:auto;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+#sidebar::-webkit-scrollbar{width:4px;}#sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.logo{padding:1.2rem 1rem;border-bottom:1px solid var(--border);}
+.logo h2{font-size:0.9rem;color:var(--blue);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;}
+.logo p{font-size:0.72rem;color:var(--t2);margin-top:0.2rem;}
+.progress-bar-wrap{padding:0.8rem 1rem;border-bottom:1px solid var(--border);}
+.progress-label{display:flex;justify-content:space-between;font-size:0.72rem;color:var(--t2);margin-bottom:0.4rem;}
+.progress-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px;transition:width 0.4s;}
+.nav-group{border-bottom:1px solid var(--border);}
+.nav-group-title{padding:0.6rem 1rem 0.3rem;font-size:0.68rem;color:var(--t3);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;}
+.nav-item{display:flex;align-items:center;gap:0.5rem;padding:0.45rem 1rem;cursor:pointer;font-size:0.82rem;color:var(--t2);transition:all 0.15s;border-left:2px solid transparent;}
+.nav-item:hover{background:var(--bg4);color:var(--t1);border-left-color:var(--blue);}
+.nav-item.active{background:var(--bg4);color:var(--blue);border-left-color:var(--blue);font-weight:600;}
+.nav-icon{font-size:1rem;flex-shrink:0;}
+.nav-badge{margin-left:auto;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:10px;background:var(--bg4);color:var(--t3);}
+.nav-badge.done{background:#1a3a1a;color:var(--green);}
+
+/* MAIN */
+#main{flex:1;height:100vh;overflow-y:auto;}
+#main::-webkit-scrollbar{width:6px;}#main::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.section{display:none;padding:2rem 2.5rem;max-width:900px;margin:0 auto;}
+.section.active{display:block;}
+
+/* HOME */
+.home-hero{text-align:center;padding:3rem 0 2rem;}
+.home-hero h1{font-size:2.2rem;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.8rem;}
+.home-hero p{color:var(--t2);font-size:1rem;max-width:600px;margin:0 auto;line-height:1.6;}
+.project-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:2rem 0;}
+.project-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.5rem;cursor:pointer;transition:all 0.2s;}
+.project-card:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:0 8px 24px rgba(88,166,255,0.1);}
+.project-card h3{font-size:1rem;margin-bottom:0.5rem;color:var(--t1);}
+.project-card p{font-size:0.82rem;color:var(--t2);line-height:1.5;margin-bottom:0.8rem;}
+.tech-tags{display:flex;flex-wrap:wrap;gap:0.3rem;}
+.tag{font-size:0.68rem;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;}
+.tag.blue{background:#0d2137;color:var(--blue);}
+.tag.green{background:#0d2613;color:var(--green);}
+.tag.orange{background:#2a1f00;color:var(--orange);}
+.tag.purple{background:#1a0d2e;color:var(--purple);}
+.tag.cyan{background:#001a12;color:var(--cyan);}
+
+/* SECTION HEADER */
+.s-header{margin-bottom:2rem;}
+.s-header .proj-badge{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;padding:0.25rem 0.7rem;border-radius:20px;background:var(--bg3);border:1px solid var(--border);color:var(--t2);margin-bottom:0.8rem;}
+.s-header h1{font-size:1.8rem;color:var(--t1);margin-bottom:0.5rem;}
+.s-header .intro{color:var(--t2);font-size:0.95rem;line-height:1.7;}
+
+/* CONTENT CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:1.5rem;overflow:hidden;}
+.card-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.5rem;}
+.card-header h2{font-size:1rem;color:var(--t1);}
+.card-icon{font-size:1.1rem;}
+.card-body{padding:1.2rem;}
+.card-body p{color:var(--t2);line-height:1.75;margin-bottom:0.8rem;}
+.card-body p:last-child{margin-bottom:0;}
+.card-body ul,.card-body ol{color:var(--t2);line-height:1.8;padding-left:1.5rem;margin-bottom:0.8rem;}
+.card-body li{margin-bottom:0.2rem;}
+.card-body strong{color:var(--t1);}
+.card-body code{background:var(--bg4);color:var(--orange);padding:0.1rem 0.4rem;border-radius:3px;font-family:'Fira Code',monospace;font-size:0.85em;}
+
+/* CODE BLOCKS */
+.code-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:1.5rem;overflow:hidden;}
+.code-header{padding:0.7rem 1.2rem;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.code-title{font-size:0.82rem;color:var(--t2);font-family:'Fira Code',monospace;}
+.copy-btn{font-size:0.72rem;padding:0.2rem 0.6rem;border:1px solid var(--border);background:var(--bg4);color:var(--t2);border-radius:4px;cursor:pointer;transition:all 0.15s;}
+.copy-btn:hover{border-color:var(--blue);color:var(--blue);}
+.code-card pre{margin:0 !important;border-radius:0 !important;}
+.code-card pre code{font-size:0.82rem !important;line-height:1.6 !important;}
+
+/* ANALOGY */
+.analogy{background:linear-gradient(135deg,#0d1f35,#0d2613);border:1px solid #1a3a5c;border-radius:10px;padding:1.2rem;margin-bottom:1.5rem;}
+.analogy-label{font-size:0.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;}
+.analogy p{color:#a8c9ef;line-height:1.7;font-size:0.92rem;}
+
+/* QUIZ */
+.quiz-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:1.5rem;overflow:hidden;}
+.quiz-header{padding:0.8rem 1.2rem;background:linear-gradient(135deg,#0d1f35,#1a0d2e);border-bottom:1px solid var(--border);}
+.quiz-header h3{font-size:0.95rem;color:var(--t1);}  
+.quiz-body{padding:1.2rem;}
+.quiz-q{margin-bottom:1.5rem;}
+.quiz-q:last-child{margin-bottom:0;}
+.q-text{font-size:0.9rem;color:var(--t1);margin-bottom:0.8rem;font-weight:600;}
+.options{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.6rem;}
+.opt{display:flex;align-items:flex-start;gap:0.6rem;padding:0.6rem 0.8rem;border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:all 0.15s;}
+.opt:hover{border-color:var(--blue);background:var(--bg4);}
+.opt input{margin-top:0.15rem;flex-shrink:0;}
+.opt label{font-size:0.85rem;color:var(--t2);cursor:pointer;line-height:1.4;}
+.check-btn{padding:0.4rem 1rem;background:var(--blue);color:#000;border:none;border-radius:5px;font-size:0.82rem;font-weight:700;cursor:pointer;transition:all 0.15s;}
+.check-btn:hover{opacity:0.85;}
+.check-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.feedback{display:none;margin-top:0.6rem;padding:0.7rem 0.9rem;border-radius:6px;font-size:0.83rem;line-height:1.5;}
+.feedback.correct{background:#0d2613;border:1px solid var(--green);color:#9ae6a0;}
+.feedback.wrong{background:#2a0d0d;border:1px solid var(--red);color:#f0a0a0;}
+
+/* CALLOUT BOXES */
+.callout{padding:0.8rem 1rem;border-radius:7px;margin-bottom:1rem;font-size:0.87rem;line-height:1.6;}
+.callout.tip{background:#0d2613;border-left:3px solid var(--green);color:#9ae6a0;}
+.callout.warning{background:#2a1f00;border-left:3px solid var(--orange);color:#e6c88a;}
+.callout.info{background:#0d1f35;border-left:3px solid var(--blue);color:#a8c9ef;}
+.callout.danger{background:#2a0d0d;border-left:3px solid var(--red);color:#f0a0a0;}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85rem;}
+th{background:var(--bg3);color:var(--t2);padding:0.6rem 0.8rem;text-align:left;border-bottom:2px solid var(--border);font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;}
+td{padding:0.55rem 0.8rem;border-bottom:1px solid var(--border);color:var(--t2);}
+td:first-child{color:var(--t1);font-weight:600;}
+tr:hover td{background:var(--bg4);}
+
+/* FLOW DIAGRAM */
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:0.3rem;margin:1rem 0;}
+.flow-node{background:var(--bg3);border:1px solid var(--blue);border-radius:6px;padding:0.4rem 0.8rem;font-size:0.8rem;color:var(--blue);font-weight:600;}
+.flow-arrow{color:var(--t3);font-size:1.1rem;}
+
+/* MATH */
+.math-block{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:1rem;margin:1rem 0;font-family:'Fira Code',monospace;font-size:0.85rem;color:var(--orange);text-align:center;}
+
+.section-divider{border:none;border-top:1px solid var(--border);margin:2rem 0;}
+</style>
+</head>
+<body>
+<div id="app">
+<aside id="sidebar">
+  <div class="logo">
+    <h2>&#127891; Learn Your Projects</h2>
+    <p>Interactive mastery platform</p>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-label"><span>Overall Progress</span><span id="prog-pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Overview</div>
+    <div class="nav-item active" onclick="show('home')" id="nav-home"><span class="nav-icon">&#127968;</span>Home Dashboard</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Project 1 &mdash; Code Review Agent</div>
+    <div class="nav-item" onclick="show('p1-arch')" id="nav-p1-arch"><span class="nav-icon">&#128202;</span>Architecture Overview</div>
+    <div class="nav-item" onclick="show('fastapi')" id="nav-fastapi"><span class="nav-icon">&#9889;</span>FastAPI Deep Dive</div>
+    <div class="nav-item" onclick="show('pydantic')" id="nav-pydantic"><span class="nav-icon">&#128737;</span>Pydantic v2</div>
+    <div class="nav-item" onclick="show('langgraph')" id="nav-langgraph"><span class="nav-icon">&#127760;</span>LangGraph Pipeline</div>
+    <div class="nav-item" onclick="show('claude')" id="nav-claude"><span class="nav-icon">&#129302;</span>Claude API + Caching</div>
+    <div class="nav-item" onclick="show('pygithub')" id="nav-pygithub"><span class="nav-icon">&#128202;</span>PyGithub + Webhooks</div>
+    <div class="nav-item" onclick="show('mongodb')" id="nav-mongodb"><span class="nav-icon">&#128196;</span>MongoDB + Motor</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Project 2 &mdash; KeaBuilder AI</div>
+    <div class="nav-item" onclick="show('lead-classify')" id="nav-lead-classify"><span class="nav-icon">&#128172;</span>Lead Classification</div>
+    <div class="nav-item" onclick="show('streaming')" id="nav-streaming"><span class="nav-icon">&#128225;</span>Streaming + Prompt Cache</div>
+    <div class="nav-item" onclick="show('tfidf')" id="nav-tfidf"><span class="nav-icon">&#128200;</span>TF-IDF Similarity Search</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Project 3 &mdash; KeaBuilder ML</div>
+    <div class="nav-item" onclick="show('pgvector')" id="nav-pgvector"><span class="nav-icon">&#128190;</span>PostgreSQL + pgvector</div>
+    <div class="nav-item" onclick="show('sysdesign')" id="nav-sysdesign"><span class="nav-icon">&#127959;</span>System Design Patterns</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Project 4 &mdash; Market Research</div>
+    <div class="nav-item" onclick="show('embeddings')" id="nav-embeddings"><span class="nav-icon">&#127302;</span>sentence-transformers + FAISS</div>
+    <div class="nav-item" onclick="show('rag')" id="nav-rag"><span class="nav-icon">&#129521;</span>RAG Pipeline</div>
+    <div class="nav-item" onclick="show('streamlit')" id="nav-streamlit"><span class="nav-icon">&#127775;</span>Streamlit Multi-page</div>
+    <div class="nav-item" onclick="show('docker')" id="nav-docker"><span class="nav-icon">&#128038;</span>Docker + Deployment</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Core Concepts</div>
+    <div class="nav-item" onclick="show('asyncpython')" id="nav-asyncpython"><span class="nav-icon">&#9889;</span>Python Async/Await</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Assessment</div>
+    <div class="nav-item" onclick="show('quiz')" id="nav-quiz"><span class="nav-icon">&#127919;</span>Quiz Arena (50 Qs)</div>
+  </div>
+  <div class="nav-group" style="padding:0.8rem 1rem;">
+    <div class="nav-group-title">Continue Learning</div>
+    <a href="part2.html" style="display:block;padding:0.45rem 0;color:var(--blue);font-size:0.82rem;">&#8594; Part 2: LangGraph, Claude, PyGithub, MongoDB, TF-IDF</a>
+    <a href="part3.html" style="display:block;padding:0.45rem 0;color:var(--blue);font-size:0.82rem;">&#8594; Part 3: pgvector, FAISS, RAG, Docker, Quiz Arena</a>
+  </div>
+</aside>
+
+<main id="main">
+<div id="home" class="section active">
+  <div class="home-hero">
+    <h1>Master Your Resume Projects</h1>
+    <p>Deep-dive into every concept, library, and algorithm across all 4 projects. Understand the <em>why</em> behind every line, so you can build confidently and answer any interview question.</p>
+  </div>
+  <div class="project-grid">
+    <div class="project-card" onclick="show('p1-arch')">
+      <h3>&#129302; AI Code Review Agent</h3>
+      <p>Production FastAPI service that reviews GitHub PRs using Claude AI via a LangGraph state machine, posting structured feedback as PR comments.</p>
+      <div class="tech-tags">
+        <span class="tag blue">FastAPI</span><span class="tag purple">LangGraph</span>
+        <span class="tag orange">Claude API</span><span class="tag green">PyGithub</span>
+        <span class="tag cyan">MongoDB</span><span class="tag blue">Pydantic v2</span>
+      </div>
+    </div>
+    <div class="project-card" onclick="show('lead-classify')">
+      <h3>&#128172; KeaBuilder AI Assessment</h3>
+      <p>Two FastAPI services: a Claude-powered lead classifier (HOT/WARM/COLD) with prompt caching + streaming, and a TF-IDF similarity search API.</p>
+      <div class="tech-tags">
+        <span class="tag orange">Claude Streaming</span><span class="tag blue">FastAPI</span>
+        <span class="tag green">Prompt Caching</span><span class="tag purple">TF-IDF</span>
+      </div>
+    </div>
+    <div class="project-card" onclick="show('pgvector')">
+      <h3>&#128200; KeaBuilder ML Assessment</h3>
+      <p>ML similarity search API using TF-IDF, plus a full PostgreSQL+pgvector schema design for storing user inputs, predictions, and 384-D embeddings.</p>
+      <div class="tech-tags">
+        <span class="tag blue">scikit-learn</span><span class="tag cyan">pgvector</span>
+        <span class="tag green">PostgreSQL</span><span class="tag orange">sentence-transformers</span>
+      </div>
+    </div>
+    <div class="project-card" onclick="show('rag')">
+      <h3>&#129521; AI Market Research Copilot</h3>
+      <p>Full-stack RAG app: upload docs &#8594; chunk &#8594; embed (local) &#8594; FAISS index &#8594; Gemini generates cited reports. Streamlit UI + FastAPI + Docker.</p>
+      <div class="tech-tags">
+        <span class="tag purple">RAG</span><span class="tag cyan">FAISS</span>
+        <span class="tag blue">Streamlit</span><span class="tag green">Gemini API</span>
+        <span class="tag orange">Docker</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">&#128218;</span><h2>How to Use This Platform</h2></div>
+    <div class="card-body">
+      <p>Navigate topics using the sidebar. Each section contains:</p>
+      <ul>
+        <li><strong>Concept deep-dive</strong> &mdash; the <em>why</em>, not just the what</li>
+        <li><strong>Real code from your projects</strong> &mdash; exact functions you wrote</li>
+        <li><strong>Mental models &amp; analogies</strong> &mdash; sticky memory anchors</li>
+        <li><strong>Quiz questions</strong> &mdash; typical interview Qs with explanations</li>
+      </ul>
+      <p>This page covers: Architecture, FastAPI, and Pydantic v2. Continue to <a href="part2.html" style="color:var(--blue)">Part 2</a> for LangGraph, Claude API, PyGithub, MongoDB, TF-IDF. Then <a href="part3.html" style="color:var(--blue)">Part 3</a> for pgvector, FAISS, RAG, Docker, Streamlit, and the Quiz Arena.</p>
+    </div>
+  </div>
+</div>
+
+<div id="p1-arch" class="section">
+  <div class="s-header">
+    <div class="proj-badge">&#129302; Project 1: AI Code Review Agent</div>
+    <h1>Architecture Overview</h1>
+    <p class="intro">Understand the full data flow before diving into individual components.</p>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">&#128203;</span><h2>What This System Does</h2></div>
+    <div class="card-body">
+      <p>A GitHub PR is submitted &rarr; a webhook or API call triggers the agent &rarr; the agent fetches the diff &rarr; sends it to Claude &rarr; parses the JSON response &rarr; saves to MongoDB &rarr; optionally posts the review as a GitHub comment.</p>
+      <div class="flow">
+        <div class="flow-node">GitHub PR</div><span class="flow-arrow">&#8594;</span>
+        <div class="flow-node">FastAPI /review</div><span class="flow-arrow">&#8594;</span>
+        <div class="flow-node">LangGraph</div><span class="flow-arrow">&#8594;</span>
+        <div class="flow-node">fetch_diff</div><span class="flow-arrow">&#8594;</span>
+        <div class="flow-node">llm_review</div><span class="flow-arrow">&#8594;</span>
+        <div class="flow-node">parse_response</div><span class="flow-arrow">&#8594;</span>
+        <div class="flow-node">build_review</div><span class="flow-arrow">&#8594;</span>
+        <div class="flow-node">persist_review</div><span class="flow-arrow">&#8594;</span>
+        <div class="flow-node">post_comment</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">&#128193;</span><h2>File Structure Explained</h2></div>
+    <div class="card-body">
+      <table>
+        <tr><th>File/Dir</th><th>Role</th><th>Key Classes/Functions</th></tr>
+        <tr><td>app/main.py</td><td>FastAPI entry point, lifecycle hooks</td><td>app, lifespan</td></tr>
+        <tr><td>app/config.py</td><td>All env-var settings via Pydantic BaseSettings</td><td>Settings, get_settings()</td></tr>
+        <tr><td>app/models/review.py</td><td>Data structures for review output</td><td>CodeReview, FindingItem, Verdict</td></tr>
+        <tr><td>app/services/github_service.py</td><td>PyGithub wrapper</td><td>GitHubService, PRDiff</td></tr>
+        <tr><td>app/services/llm/claude_client.py</td><td>Anthropic API with caching</td><td>ClaudeClient, _SYSTEM_PROMPT</td></tr>
+        <tr><td>app/services/review_service.py</td><td>Orchestrates the full pipeline</td><td>ReviewService.run_review()</td></tr>
+        <tr><td>app/agents/review_agent.py</td><td>LangGraph state machine version</td><td>review_graph, AgentState</td></tr>
+        <tr><td>app/services/db_service.py</td><td>Async MongoDB CRUD</td><td>DatabaseService</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">&#128269;</span><h2>Design Patterns Used</h2></div>
+    <div class="card-body">
+      <ul>
+        <li><strong>Factory Pattern</strong> &mdash; <code>_build_llm_client()</code> returns either <code>ClaudeClient</code> or <code>OpenAIClient</code> based on env config.</li>
+        <li><strong>Abstract Base Class</strong> &mdash; <code>BaseLLMClient(ABC)</code> defines the interface both providers must implement.</li>
+        <li><strong>State Machine</strong> &mdash; LangGraph <code>StateGraph</code> with short-circuit error propagation.</li>
+        <li><strong>Repository Pattern</strong> &mdash; <code>DatabaseService</code> wraps all MongoDB calls.</li>
+        <li><strong>DTO</strong> &mdash; <code>PRDiff</code> dataclass carries GitHub data between services.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout tip">&#128161; <strong>Key insight:</strong> The LangGraph agent and ReviewService both implement the same pipeline. LangGraph makes it composable &mdash; you can add a "security scanner" node without touching the existing code.</div>
+  <div class="quiz-card">
+    <div class="quiz-header"><h3>&#127919; Architecture Quiz</h3></div>
+    <div class="quiz-body">
+      <div class="quiz-q">
+        <p class="q-text">Q1: Why does the project have both <code>ReviewService</code> and <code>review_agent.py</code>?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="arch1" value="0"><label>ReviewService is a backup in case LangGraph fails</label></div>
+          <div class="opt"><input type="radio" name="arch1" value="1"><label>ReviewService is the simple orchestration; LangGraph makes it composable for future multi-agent extension</label></div>
+          <div class="opt"><input type="radio" name="arch1" value="2"><label>They run in parallel for redundancy</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('arch1',1,'ReviewService is the straightforward version. review_agent.py wraps the same steps in a StateGraph so you can later add parallel nodes like a security scanner or test generator without rewriting the pipeline.')">Check Answer</button>
+        <div class="feedback" id="fb-arch1"></div>
+      </div>
+      <div class="quiz-q">
+        <p class="q-text">Q2: What is the purpose of the <code>PRDiff</code> dataclass?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="arch2" value="0"><label>It stores the MongoDB document</label></div>
+          <div class="opt"><input type="radio" name="arch2" value="1"><label>It is a Data Transfer Object (DTO) that cleanly carries all PR metadata between services</label></div>
+          <div class="opt"><input type="radio" name="arch2" value="2"><label>It is the Pydantic API request model</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('arch2',1,'PRDiff is a Python dataclass (not Pydantic) that bundles repo, pr_number, pr_title, diff_text, files_changed into one clean object passed between GitHubService, prompt builder, and the LangGraph nodes.')">Check Answer</button>
+        <div class="feedback" id="fb-arch2"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="fastapi" class="section">
+  <div class="s-header">
+    <div class="proj-badge">&#9889; Used in ALL 4 Projects</div>
+    <h1>FastAPI &mdash; The Modern Python Web Framework</h1>
+    <p class="intro">FastAPI is the foundation of every project you built. Understanding it deeply means you can explain exactly how your APIs work, why they are fast, and how they auto-generate documentation.</p>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">&#128218;</span><h2>What is FastAPI? (And why not Flask/Django?)</h2></div>
+    <div class="card-body">
+      <p>FastAPI is an <strong>ASGI</strong> (Asynchronous Server Gateway Interface) web framework. ASGI is the modern successor to WSGI.</p>
+      <table>
+        <tr><th>Feature</th><th>WSGI (Flask, Django)</th><th>ASGI (FastAPI)</th></tr>
+        <tr><td>Concurrency model</td><td>One request at a time per worker</td><td>Thousands of concurrent requests, single thread</td></tr>
+        <tr><td>async/await</td><td>Not native</td><td>First-class citizen</td></tr>
+        <tr><td>Type hints</td><td>Optional, no integration</td><td>Core feature &mdash; drives validation + docs</td></tr>
+        <tr><td>Auto-docs</td><td>Manual or with extensions</td><td>Built-in /docs (Swagger) + /redoc</td></tr>
+        <tr><td>Performance</td><td>~1000-3000 req/s</td><td>~30,000+ req/s</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="analogy">
+    <div class="analogy-label">&#129504; Mental Model</div>
+    <p>Think of WSGI like a bank with one teller per queue. Each customer waits in line. ASGI is like a bank with a digital queuing system &mdash; the teller can call the next customer while the previous one is waiting for their form to be processed. FastAPI is that modern bank.</p>
+  </div>
+  <div class="code-card">
+    <div class="code-header"><span class="code-title">demo1_lead_classifier/app.py &mdash; App creation + middleware</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-python">from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(
+    title="KeaBuilder Lead Classifier",
+    description="AI-powered lead qualification using Claude.",
+    version="1.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)</code></pre>
+  </div>
+  <div class="code-card">
+    <div class="code-header"><span class="code-title">Route patterns used in your projects</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-python"># Pattern 1: Simple GET
+@app.get("/health", response_model=HealthResponse)
+def health():
+    return HealthResponse(status="ok")
+
+# Pattern 2: GET with path parameter
+@app.get("/review/{review_id}")
+async def get_review(review_id: str):
+    doc = await db.get_review(review_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Review not found")
+    return doc
+
+# Pattern 3: GET with query parameters
+@app.get("/review")
+async def list_reviews(
+    repo: str | None = None,
+    limit: int = 20,
+    skip: int = 0
+):
+    return await review_svc.list_reviews(repo=repo, limit=limit, skip=skip)
+
+# Pattern 4: POST with request body
+@app.post("/classify-lead", response_model=LeadOutput)
+async def classify_lead(lead: LeadInput):
+    if not lead.message or len(lead.message.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+    # FastAPI auto-parses + validates the JSON body into `lead`
+    # If validation fails, it returns 422 Unprocessable Entity automatically</code></pre>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">&#127760;</span><h2>APIRouter &mdash; Organizing Routes</h2></div>
+    <div class="card-body">
+      <p>When you have many endpoints, split them into routers. Your Code Review Agent uses <code>app/api/routes/review.py</code> and <code>app/api/routes/webhook.py</code>.</p>
+    </div>
+  </div>
+  <div class="code-card">
+    <div class="code-header"><span class="code-title">APIRouter pattern</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-python"># app/api/routes/review.py
+from fastapi import APIRouter
+router = APIRouter(prefix="/review", tags=["Reviews"])
+
+@router.post("/")           # Actual path: POST /review/
+async def trigger_review(): ...
+
+@router.get("/{review_id}") # Actual path: GET /review/{review_id}
+async def get_review(): ...
+
+# app/main.py
+from app.api.routes.review import router as review_router
+app.include_router(review_router)</code></pre>
+  </div>
+  <div class="quiz-card">
+    <div class="quiz-header"><h3>&#127919; FastAPI Quiz &mdash; 6 Questions</h3></div>
+    <div class="quiz-body">
+      <div class="quiz-q">
+        <p class="q-text">Q1: What does ASGI stand for, and why does it matter for FastAPI?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="fq1" value="0"><label>Application Server Gateway Interface &mdash; allows multiple apps to share a server</label></div>
+          <div class="opt"><input type="radio" name="fq1" value="1"><label>Asynchronous Server Gateway Interface &mdash; allows handling thousands of concurrent requests without blocking</label></div>
+          <div class="opt"><input type="radio" name="fq1" value="2"><label>Advanced Server Gzip Interface &mdash; compresses HTTP responses</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('fq1',1,'ASGI = Asynchronous Server Gateway Interface. Unlike WSGI, ASGI lets one thread handle thousands of requests simultaneously using async/await.')">Check Answer</button>
+        <div class="feedback" id="fb-fq1"></div>
+      </div>
+      <div class="quiz-q">
+        <p class="q-text">Q2: Why is <code>classify_lead</code> declared as <code>async def</code> but <code>health()</code> is a plain <code>def</code>?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="fq2" value="0"><label>health() is synchronous because it is simpler code</label></div>
+          <div class="opt"><input type="radio" name="fq2" value="1"><label>classify_lead awaits the Anthropic API (I/O), so async lets other requests run during that wait. health() returns instantly &mdash; no I/O, no async needed.</label></div>
+          <div class="opt"><input type="radio" name="fq2" value="2"><label>All FastAPI functions must be async</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('fq2',1,'async def is for I/O-bound work. FastAPI runs sync def functions in a thread pool automatically. health() returns a dict in microseconds.')">Check Answer</button>
+        <div class="feedback" id="fb-fq2"></div>
+      </div>
+      <div class="quiz-q">
+        <p class="q-text">Q3: What HTTP status code does FastAPI <em>automatically</em> return when Pydantic validation fails?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="fq3" value="0"><label>400 Bad Request</label></div>
+          <div class="opt"><input type="radio" name="fq3" value="1"><label>422 Unprocessable Entity</label></div>
+          <div class="opt"><input type="radio" name="fq3" value="2"><label>500 Internal Server Error</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('fq3',1,'FastAPI returns 422 when Pydantic cannot validate the request body. The response shows exactly which field failed and why.')">Check Answer</button>
+        <div class="feedback" id="fb-fq3"></div>
+      </div>
+      <div class="quiz-q">
+        <p class="q-text">Q4: Why does your project use <code>CORSMiddleware</code>?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="fq4" value="0"><label>To allow the server to make outbound HTTP requests</label></div>
+          <div class="opt"><input type="radio" name="fq4" value="1"><label>To allow browser JavaScript from any domain to call this API (bypassing browser same-origin policy)</label></div>
+          <div class="opt"><input type="radio" name="fq4" value="2"><label>To compress API responses with gzip</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('fq4',1,'CORS = Cross-Origin Resource Sharing. Browsers block JS from calling APIs on different domains by default. CORSMiddleware adds headers so browsers allow it.')">Check Answer</button>
+        <div class="feedback" id="fb-fq4"></div>
+      </div>
+      <div class="quiz-q">
+        <p class="q-text">Q5: What does <code>response_model=LeadOutput</code> do?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="fq5" value="0"><label>Validates the incoming request body against LeadOutput</label></div>
+          <div class="opt"><input type="radio" name="fq5" value="1"><label>Validates + serializes the return value and shows response schema in /docs</label></div>
+          <div class="opt"><input type="radio" name="fq5" value="2"><label>It is just documentation with no runtime effect</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('fq5',1,'response_model does three things: (1) validates return value, (2) strips extra fields not in the model, (3) shows response shape in Swagger /docs.')">Check Answer</button>
+        <div class="feedback" id="fb-fq5"></div>
+      </div>
+      <div class="quiz-q">
+        <p class="q-text">Q6: How does FastAPI auto-generate the /docs page?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="fq6" value="0"><label>It reads docstrings from your functions</label></div>
+          <div class="opt"><input type="radio" name="fq6" value="1"><label>It builds an OpenAPI schema from route decorators, Pydantic models, and type annotations, then renders Swagger UI</label></div>
+          <div class="opt"><input type="radio" name="fq6" value="2"><label>You must manually write an openapi.json file</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('fq6',1,'FastAPI introspects route decorators and Pydantic models at import time, builds a full OpenAPI 3.x JSON schema, and serves Swagger UI at /docs automatically.')">Check Answer</button>
+        <div class="feedback" id="fb-fq6"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pydantic" class="section">
+  <div class="s-header">
+    <div class="proj-badge">&#128737; Used in ALL 4 Projects</div>
+    <h1>Pydantic v2 &mdash; Data Validation &amp; Settings</h1>
+    <p class="intro">Pydantic is the data layer of every FastAPI project. It validates inputs, serializes outputs, and loads environment variables.</p>
+  </div>
+  <div class="code-card">
+    <div class="code-header"><span class="code-title">app/models/review.py &mdash; your actual Pydantic models</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-python">from datetime import datetime
+from enum import Enum
+from typing import Optional
+from pydantic import BaseModel, Field
+
+class Verdict(str, Enum):
+    APPROVE = "APPROVE"
+    REQUEST_CHANGES = "REQUEST_CHANGES"
+    COMMENT = "COMMENT"
+
+class Scores(BaseModel):
+    quality: int = Field(..., ge=1, le=10)    # required, min=1, max=10
+    security: int = Field(..., ge=1, le=10)
+    performance: int = Field(..., ge=1, le=10)
+
+class FindingItem(BaseModel):
+    file: Optional[str] = None
+    line: Optional[int] = None
+    description: str
+    severity: Optional[str] = None
+
+class CodeReview(BaseModel):
+    repo: str
+    pr_number: int
+    reviewed_at: datetime = Field(default_factory=datetime.utcnow)
+    bugs: list[FindingItem] = Field(default_factory=list)
+    security: list[FindingItem] = Field(default_factory=list)
+    scores: Scores
+    final_verdict: Verdict
+    summary: str
+    posted_to_github: bool = False</code></pre>
+  </div>
+  <div class="code-card">
+    <div class="code-header"><span class="code-title">app/config.py &mdash; BaseSettings + lru_cache singleton</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+<pre><code class="language-python">from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
+
+class Settings(BaseSettings):
+    github_token: str
+    anthropic_api_key: str = ""
+    llm_provider: str = "claude"
+    mongodb_uri: str = "mongodb://localhost:27017"
+    claude_model: str = "claude-sonnet-4-6"
+    max_diff_chars: int = 50_000
+    require_human_approval: bool = False
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False
+    )
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()</code></pre>
+  </div>
+  <div class="quiz-card">
+    <div class="quiz-header"><h3>&#127919; Pydantic v2 Quiz</h3></div>
+    <div class="quiz-body">
+      <div class="quiz-q">
+        <p class="q-text">Q1: Why use <code>default_factory=list</code> instead of <code>default=[]</code>?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="pq1" value="0"><label>Both work identically in Pydantic v2</label></div>
+          <div class="opt"><input type="radio" name="pq1" value="1"><label>Using <code>default=[]</code> shares the same list across ALL instances, causing bugs. <code>default_factory=list</code> creates a new list for each instance.</label></div>
+          <div class="opt"><input type="radio" name="pq1" value="2"><label>Pydantic v2 requires default_factory for performance</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('pq1',1,'Mutable defaults (list, dict) are shared across instances. If you do bugs=[], every CodeReview instance shares the SAME list object. default_factory=list calls list() for each new instance. Pydantic v2 actually raises an error if you use a mutable default.')">Check Answer</button>
+        <div class="feedback" id="fb-pq1"></div>
+      </div>
+      <div class="quiz-q">
+        <p class="q-text">Q2: What does <code>class Verdict(str, Enum)</code> do, and why inherit from <code>str</code>?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="pq2" value="0"><label>Extends string methods like upper() and lower()</label></div>
+          <div class="opt"><input type="radio" name="pq2" value="1"><label>Inheriting str means each enum value IS a string, so JSON serialization works without custom encoders</label></div>
+          <div class="opt"><input type="radio" name="pq2" value="2"><label>str Enum is required for Pydantic to accept the field</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('pq2',1,'With class Verdict(str, Enum), Verdict.APPROVE == "APPROVE" is True. json.dumps({"verdict": Verdict.APPROVE}) gives {"verdict": "APPROVE"} without custom encoders.')">Check Answer</button>
+        <div class="feedback" id="fb-pq2"></div>
+      </div>
+      <div class="quiz-q">
+        <p class="q-text">Q3: Why use <code>@lru_cache</code> on <code>get_settings()</code>?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="pq3" value="0"><label>To cache the database connection pool</label></div>
+          <div class="opt"><input type="radio" name="pq3" value="1"><label>To ensure Settings is only instantiated once (singleton), avoiding repeated env var parsing on every request</label></div>
+          <div class="opt"><input type="radio" name="pq3" value="2"><label>lru_cache is required for BaseSettings to work</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('pq3',1,'lru_cache caches the return value. The first call creates the Settings instance. Every subsequent call returns the cached instance. Without it, every API request would re-read os.environ.')">Check Answer</button>
+        <div class="feedback" id="fb-pq3"></div>
+      </div>
+      <div class="quiz-q">
+        <p class="q-text">Q4: What happens if you pass <code>quality=15</code> to <code>Scores</code> (which has <code>le=10</code>)?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="pq4" value="0"><label>Pydantic silently clips it to 10</label></div>
+          <div class="opt"><input type="radio" name="pq4" value="1"><label>Pydantic raises a ValidationError about the constraint violation</label></div>
+          <div class="opt"><input type="radio" name="pq4" value="2"><label>Constraints are only used for documentation</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('pq4',1,'Pydantic raises pydantic.ValidationError: quality: Input should be less than or equal to 10. Your code_review_agent manually clamps: max(1, min(10, int(val))) before building Scores.')">Check Answer</button>
+        <div class="feedback" id="fb-pq4"></div>
+      </div>
+      <div class="quiz-q">
+        <p class="q-text">Q5: What does <code>SettingsConfigDict(env_file=".env")</code> do?</p>
+        <div class="options">
+          <div class="opt"><input type="radio" name="pq5" value="0"><label>Exports settings to a .env file</label></div>
+          <div class="opt"><input type="radio" name="pq5" value="1"><label>Tells BaseSettings to also read from a .env file in addition to actual environment variables</label></div>
+          <div class="opt"><input type="radio" name="pq5" value="2"><label>Specifies the config file format (YAML vs TOML vs env)</label></div>
+        </div>
+        <button class="check-btn" onclick="checkQ('pq5',1,'SettingsConfigDict(env_file=".env") loads the .env file and treats each KEY=VALUE line as an environment variable. Actual env vars take priority over .env values.')">Check Answer</button>
+        <div class="feedback" id="fb-pq5"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="langgraph" class="section"><div class="s-header"><div class="proj-badge">Part 2</div><h1>LangGraph Pipeline</h1><p class="intro">This section is covered in <a href="part2.html" style="color:var(--blue)">Part 2</a> of the platform. Click the link to open it.</p></div></div>
+<div id="claude" class="section"><div class="s-header"><div class="proj-badge">Part 2</div><h1>Claude API + Caching</h1><p class="intro">This section is covered in <a href="part2.html" style="color:var(--blue)">Part 2</a> of the platform.</p></div></div>
+<div id="pygithub" class="section"><div class="s-header"><div class="proj-badge">Part 2</div><h1>PyGithub + Webhooks</h1><p class="intro">This section is covered in <a href="part2.html" style="color:var(--blue)">Part 2</a>.</p></div></div>
+<div id="mongodb" class="section"><div class="s-header"><div class="proj-badge">Part 2</div><h1>MongoDB + Motor</h1><p class="intro">This section is covered in <a href="part2.html" style="color:var(--blue)">Part 2</a>.</p></div></div>
+<div id="lead-classify" class="section"><div class="s-header"><div class="proj-badge">Part 2</div><h1>Lead Classification</h1><p class="intro">This section is covered in <a href="part2.html" style="color:var(--blue)">Part 2</a>.</p></div></div>
+<div id="streaming" class="section"><div class="s-header"><div class="proj-badge">Part 2</div><h1>Streaming + Prompt Cache</h1><p class="intro">This section is covered in <a href="part2.html" style="color:var(--blue)">Part 2</a>.</p></div></div>
+<div id="tfidf" class="section"><div class="s-header"><div class="proj-badge">Part 2</div><h1>TF-IDF Similarity Search</h1><p class="intro">This section is covered in <a href="part2.html" style="color:var(--blue)">Part 2</a>.</p></div></div>
+<div id="pgvector" class="section"><div class="s-header"><div class="proj-badge">Part 3</div><h1>PostgreSQL + pgvector</h1><p class="intro">This section is covered in <a href="part3.html" style="color:var(--blue)">Part 3</a>.</p></div></div>
+<div id="sysdesign" class="section"><div class="s-header"><div class="proj-badge">Part 3</div><h1>System Design Patterns</h1><p class="intro">This section is covered in <a href="part3.html" style="color:var(--blue)">Part 3</a>.</p></div></div>
+<div id="embeddings" class="section"><div class="s-header"><div class="proj-badge">Part 3</div><h1>sentence-transformers + FAISS</h1><p class="intro">This section is covered in <a href="part3.html" style="color:var(--blue)">Part 3</a>.</p></div></div>
+<div id="rag" class="section"><div class="s-header"><div class="proj-badge">Part 3</div><h1>RAG Pipeline</h1><p class="intro">This section is covered in <a href="part3.html" style="color:var(--blue)">Part 3</a>.</p></div></div>
+<div id="streamlit" class="section"><div class="s-header"><div class="proj-badge">Part 3</div><h1>Streamlit Multi-page</h1><p class="intro">This section is covered in <a href="part3.html" style="color:var(--blue)">Part 3</a>.</p></div></div>
+<div id="docker" class="section"><div class="s-header"><div class="proj-badge">Part 3</div><h1>Docker + Deployment</h1><p class="intro">This section is covered in <a href="part3.html" style="color:var(--blue)">Part 3</a>.</p></div></div>
+<div id="asyncpython" class="section"><div class="s-header"><div class="proj-badge">Part 3</div><h1>Python Async/Await</h1><p class="intro">This section is covered in <a href="part3.html" style="color:var(--blue)">Part 3</a>.</p></div></div>
+<div id="quiz" class="section"><div class="s-header"><div class="proj-badge">Part 3</div><h1>Quiz Arena</h1><p class="intro">The scored Quiz Arena is in <a href="part3.html" style="color:var(--blue)">Part 3</a>.</p></div></div>
+
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script>
+const SECTIONS=['home','p1-arch','fastapi','pydantic','langgraph','claude','pygithub','mongodb','lead-classify','streaming','tfidf','pgvector','sysdesign','embeddings','rag','streamlit','docker','asyncpython','quiz'];
+const NAV_MAP={home:'nav-home','p1-arch':'nav-p1-arch',fastapi:'nav-fastapi',pydantic:'nav-pydantic',langgraph:'nav-langgraph',claude:'nav-claude',pygithub:'nav-pygithub',mongodb:'nav-mongodb','lead-classify':'nav-lead-classify',streaming:'nav-streaming',tfidf:'nav-tfidf',pgvector:'nav-pgvector',sysdesign:'nav-sysdesign',embeddings:'nav-embeddings',rag:'nav-rag',streamlit:'nav-streamlit',docker:'nav-docker',asyncpython:'nav-asyncpython',quiz:'nav-quiz'};
+let visited=JSON.parse(localStorage.getItem('visited')||'{}');
+function show(id){
+  SECTIONS.forEach(s=>{const el=document.getElementById(s);if(el)el.classList.remove('active');});
+  Object.values(NAV_MAP).forEach(n=>{const el=document.getElementById(n);if(el)el.classList.remove('active');});
+  const el=document.getElementById(id);if(el){el.classList.add('active');}
+  const nav=document.getElementById(NAV_MAP[id]);if(nav)nav.classList.add('active');
+  visited[id]=true;localStorage.setItem('visited',JSON.stringify(visited));updateProgress();
+  document.getElementById('main').scrollTop=0;
+  if(typeof Prism!=='undefined')Prism.highlightAll();
+}
+function updateProgress(){
+  const total=SECTIONS.length,done=Object.keys(visited).length;
+  const pct=Math.round((done/total)*100);
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-fill').style.width=pct+'%';
+}
+function checkQ(name,correct,explanation){
+  const radios=document.querySelectorAll('input[name="'+name+'"]');
+  let selected=-1;
+  radios.forEach((r,i)=>{if(r.checked)selected=parseInt(r.value);});
+  if(selected===-1){alert('Please select an answer first!');return;}
+  const fb=document.getElementById('fb-'+name);
+  if(!fb)return;
+  fb.style.display='block';
+  if(selected===correct){
+    fb.className='feedback correct';
+    fb.innerHTML='&#9989; <strong>Correct!</strong> '+explanation;
+  }else{
+    fb.className='feedback wrong';
+    fb.innerHTML='&#10060; <strong>Incorrect.</strong> '+explanation;
+  }
+  radios.forEach(r=>{r.disabled=true;});
+}
+function copyCode(btn){
+  const pre=btn.closest('.code-card').querySelector('pre code');
+  if(!pre)return;
+  navigator.clipboard.writeText(pre.textContent).then(()=>{
+    const orig=btn.textContent;btn.textContent='Copied!';
+    setTimeout(()=>{btn.textContent=orig;},1500);
+  });
+}
+updateProgress();
+if(typeof Prism!=='undefined')Prism.highlightAll();
+</script>
+</body>
+</html>
