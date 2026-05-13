@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 5: Production ML & System Design | Learning Platform</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--t1:#e6edf3;--t2:#8b949e;--border:#30363d;--blue:#58a6ff;--green:#3fb950;--orange:#d29922;--purple:#bc8cff;--red:#f85149;--cyan:#39d353;--pink:#ff7b72}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.7}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+.nav-brand{color:var(--blue);font-weight:700;font-size:14px;margin-right:8px}
+.nav-pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border);color:var(--t2);background:transparent}
+.nav-pill:hover{border-color:var(--blue);color:var(--blue)}
+.nav-pill.active{background:var(--blue);color:#000;border-color:var(--blue)}
+.nav-pill a{color:inherit;text-decoration:none}
+main{max-width:960px;margin:0 auto;padding:32px 20px 80px}
+h1{font-size:28px;font-weight:700;margin-bottom:8px}
+.subtitle{color:var(--t2);font-size:15px;margin-bottom:32px}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;border-bottom:1px solid var(--border);padding-bottom:8px}
+h3{font-size:17px;font-weight:600;margin:24px 0 12px;color:var(--blue)}
+h4{font-size:14px;font-weight:600;margin:16px 0 8px;color:var(--orange);text-transform:uppercase;letter-spacing:.5px}
+p{margin-bottom:12px}
+ul,ol{margin:0 0 12px 24px}li{margin-bottom:4px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:20px}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;letter-spacing:.5px}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--blue);border:1px solid rgba(88,166,255,.3)}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.badge-orange{background:rgba(210,153,34,.15);color:var(--orange);border:1px solid rgba(210,153,34,.3)}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);border:1px solid rgba(188,140,255,.3)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+pre{border-radius:6px;margin:12px 0;overflow-x:auto;font-size:13px}
+code.inline{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:13px;color:var(--orange)}
+.callout{border-radius:6px;padding:14px 16px;margin:16px 0;border-left:3px solid}
+.callout-tip{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--blue)}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--orange)}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout strong{display:block;margin-bottom:4px;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.callout-tip strong{color:var(--green)}
+.callout-info strong{color:var(--blue)}
+.callout-warn strong{color:var(--orange)}
+.callout-danger strong{color:var(--red)}
+.comparison-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+.comparison-table th{background:var(--bg3);padding:10px 14px;text-align:left;border:1px solid var(--border);color:var(--t2);font-size:12px;text-transform:uppercase}
+.comparison-table td{padding:10px 14px;border:1px solid var(--border);vertical-align:top}
+.comparison-table tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+.quiz-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:32px 0}
+.quiz-section h3{margin-top:0;color:var(--purple)}
+.quiz-q{margin-bottom:20px;padding:16px;background:var(--bg3);border-radius:6px}
+.quiz-q p{margin-bottom:10px;font-weight:500}
+.quiz-opt{display:block;padding:8px 12px;margin:4px 0;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--t1);font-size:14px;width:100%;text-align:left;transition:all .15s}
+.quiz-opt:hover{border-color:var(--blue);background:rgba(88,166,255,.08)}
+.quiz-opt.correct{background:rgba(63,185,80,.15);border-color:var(--green);color:var(--green)}
+.quiz-opt.wrong{background:rgba(248,81,73,.15);border-color:var(--red);color:var(--red)}
+.quiz-feedback{margin-top:8px;font-size:13px;padding:8px 12px;border-radius:4px;display:none}
+.feedback-correct{background:rgba(63,185,80,.1);border:1px solid var(--green);color:var(--green)}
+.feedback-wrong{background:rgba(248,81,73,.1);border:1px solid var(--red);color:var(--red)}
+.pillar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:16px 0}
+.pillar{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px}
+.pillar h4{margin-top:0}
+.pillar ul{margin-left:16px;font-size:13px;color:var(--t2)}
+.design-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;margin:16px 0}
+.flow-box{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+.flow-node{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600}
+.flow-node.blue{border-color:var(--blue);color:var(--blue)}
+.flow-node.green{border-color:var(--green);color:var(--green)}
+.flow-node.orange{border-color:var(--orange);color:var(--orange)}
+.flow-node.purple{border-color:var(--purple);color:var(--purple)}
+.flow-node.red{border-color:var(--red);color:var(--red)}
+.flow-arrow{color:var(--t2);font-size:18px}
+.tier-box{border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin:6px 0;background:var(--bg2)}
+.tier-box strong{color:var(--orange)}
+section{margin-bottom:48px}
+.section-intro{color:var(--t2);font-size:15px;margin-bottom:20px;padding:16px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--blue)}
+.number-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--blue);color:#000;border-radius:50%;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0}
+</style>
+</head>
+<body>
+<nav>
+  <span class="nav-brand">🧠 Learn Platform</span>
+  <span class="nav-pill"><a href="index.html">Part 1: FastAPI & Pydantic</a></span>
+  <span class="nav-pill"><a href="part2.html">Part 2: LangGraph & Claude API</a></span>
+  <span class="nav-pill"><a href="part3.html">Part 3: pgvector, RAG & Docker</a></span>
+  <span class="nav-pill"><a href="part4.html">Part 4: AI Frameworks & APIs</a></span>
+  <span class="nav-pill active">Part 5: Production ML & System Design</span>
+</nav>
+<main>
+<h1>Part 5: Production ML &amp; System Design</h1>
+<p class="subtitle">AI Engineering principles, MLOps, Deep Learning fundamentals, System Design Interview patterns, AWS Well-Architected, and DevOps for AI</p>
+
+<!-- ============================================================ SECTION 1: AI ENGINEERING -->
+<section id="ai-engineering">
+<h2>1. AI Engineering (Chip Huyen — AIE Book)</h2>
+<p class="section-intro">AI Engineering is the discipline of building production applications on top of foundation models. Unlike traditional ML (training models from scratch), AI Engineering focuses on: model selection, prompt design, evaluation, RAG, agents, and reliability of AI-powered products.</p>
+
+<h3>The AI Engineering Stack</h3>
+<div class="card">
+<table class="comparison-table">
+<tr><th>Layer</th><th>What it covers</th><th>Key tools</th></tr>
+<tr><td><strong>Inference</strong></td><td>Running foundation models efficiently</td><td>vLLM, TGI, ONNX Runtime, llama.cpp</td></tr>
+<tr><td><strong>Orchestration</strong></td><td>Chaining models + tools</td><td>LangChain, LangGraph, LlamaIndex, Haystack</td></tr>
+<tr><td><strong>Memory</strong></td><td>Storing + retrieving context</td><td>pgvector, Pinecone, Chroma, Weaviate, Redis</td></tr>
+<tr><td><strong>Evaluation</strong></td><td>Measuring output quality</td><td>RAGAS, PromptFoo, LangSmith, Braintrust</td></tr>
+<tr><td><strong>Observability</strong></td><td>Tracing, logging, monitoring</td><td>LangFuse, Arize, Weights & Biases</td></tr>
+<tr><td><strong>Data</strong></td><td>Managing training/fine-tune data</td><td>Label Studio, Argilla, Hugging Face Datasets</td></tr>
+</table>
+</div>
+
+<h3>RAG Pipeline — Deep Dive</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-blue">ARCHITECTURE</span><strong>Retrieval-Augmented Generation</strong></div>
+<p>RAG solves the knowledge cutoff and hallucination problems by retrieving relevant facts at query time and injecting them into the prompt.</p>
+<div class="flow-box">
+  <div class="flow-node blue">Query</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node orange">Embed Query</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node green">Vector Search</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node purple">Rerank</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node blue">Augmented Prompt</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node green">LLM Answer</div>
+</div>
+<pre><code class="language-python">from sentence_transformers import SentenceTransformer
+import psycopg2
+import anthropic
+
+embed_model = SentenceTransformer("all-MiniLM-L6-v2")
+llm = anthropic.Anthropic()
+
+def rag_query(question: str, top_k: int = 5) -> str:
+    # 1. Embed the question
+    q_embedding = embed_model.encode(question).tolist()
+
+    # 2. Vector search (pgvector)
+    conn = psycopg2.connect(DATABASE_URL)
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT content, source, 1 - (embedding <=> %s::vector) AS similarity
+            FROM documents
+            ORDER BY embedding <=> %s::vector
+            LIMIT %s
+        """, (q_embedding, q_embedding, top_k))
+        chunks = cur.fetchall()
+
+    # 3. Build context from retrieved chunks
+    context = "\n\n".join([
+        f"[Source: {chunk[1]}]\n{chunk[0]}"
+        for chunk in chunks
+    ])
+
+    # 4. Augmented prompt
+    prompt = f"""Answer the question based on these retrieved documents:
+
+{context}
+
+Question: {question}
+Answer (if not in documents, say "I don't have that information"):"""
+
+    # 5. Generate answer
+    response = llm.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.content[0].text</code></pre>
+</div>
+
+<h3>RAG Evaluation — RAGAS Metrics</h3>
+<div class="card">
+<table class="comparison-table">
+<tr><th>Metric</th><th>What it measures</th><th>Formula</th></tr>
+<tr><td><strong>Faithfulness</strong></td><td>Is the answer grounded in the retrieved context?</td><td>Claims in answer ∩ Claims in context / Total claims</td></tr>
+<tr><td><strong>Answer Relevancy</strong></td><td>Does the answer address the question?</td><td>Cosine similarity(generated questions, original question)</td></tr>
+<tr><td><strong>Context Precision</strong></td><td>How relevant are the retrieved chunks?</td><td>Relevant chunks / Total retrieved chunks</td></tr>
+<tr><td><strong>Context Recall</strong></td><td>Were all needed facts retrieved?</td><td>Ground truth claims in context / Total ground truth claims</td></tr>
+</table>
+<pre><code class="language-python">from ragas import evaluate
+from ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall
+from datasets import Dataset
+
+# Prepare evaluation dataset
+eval_data = {
+    "question": ["What is pgvector?"],
+    "answer": ["pgvector is a PostgreSQL extension for vector similarity search"],
+    "contexts": [["pgvector enables storing and querying vector embeddings..."]],
+    "ground_truth": ["pgvector is a PostgreSQL extension that adds vector data type and similarity search"]
+}
+
+dataset = Dataset.from_dict(eval_data)
+result = evaluate(
+    dataset,
+    metrics=[faithfulness, answer_relevancy, context_precision, context_recall]
+)
+print(result)
+# {'faithfulness': 0.92, 'answer_relevancy': 0.88, 'context_precision': 0.85, 'context_recall': 0.91}</code></pre>
+</div>
+
+<h3>AI Agent Patterns</h3>
+<div class="card">
+<table class="comparison-table">
+<tr><th>Pattern</th><th>Description</th><th>Use when</th></tr>
+<tr><td><strong>ReAct</strong></td><td>Reason + Act in a loop (think, tool call, observe)</td><td>General-purpose agents with external tools</td></tr>
+<tr><td><strong>Plan-and-Execute</strong></td><td>Plan full task upfront, then execute steps</td><td>Complex, predictable multi-step tasks</td></tr>
+<tr><td><strong>Reflection</strong></td><td>Agent critiques and refines its own output</td><td>Writing, code generation, quality-critical tasks</td></tr>
+<tr><td><strong>Multi-Agent</strong></td><td>Specialized agents collaborate (researcher, writer, critic)</td><td>Complex workflows needing specialization</td></tr>
+<tr><td><strong>RAG Agent</strong></td><td>Agent that retrieves docs before answering</td><td>Knowledge-intensive tasks with changing info</td></tr>
+</table>
+</div>
+
+<h3>Prompt Engineering Best Practices</h3>
+<div class="card">
+<ul>
+<li><strong>Be explicit about output format</strong>: "Return JSON with keys: name, score, reason"</li>
+<li><strong>Use few-shot examples</strong>: Show 2-3 examples of the exact transformation you want</li>
+<li><strong>Chain of thought</strong>: "Think step by step before giving the final answer"</li>
+<li><strong>Persona</strong>: "You are a senior Python engineer at a FAANG company"</li>
+<li><strong>Constraints</strong>: "Be concise. Max 3 sentences. No markdown."</li>
+<li><strong>Negative prompting</strong>: "Do NOT make up information. If unsure, say 'I don't know'"</li>
+<li><strong>System vs user split</strong>: Put stable instructions in system, variable input in user turn</li>
+<li><strong>Temperature</strong>: 0-0.3 for structured tasks, 0.7+ for creative writing</li>
+</ul>
+</div>
+
+<div class="quiz-section">
+<h3>🧠 Quiz: AI Engineering</h3>
+<div class="quiz-q" id="q1">
+<p>1. In RAG evaluation, what does "Faithfulness" measure?</p>
+<button class="quiz-opt" onclick="checkQ('q1',0)">A. How fast the system retrieves documents</button>
+<button class="quiz-opt" onclick="checkQ('q1',1)">B. Whether the generated answer is grounded in the retrieved context (no hallucinations)</button>
+<button class="quiz-opt" onclick="checkQ('q1',2)">C. Whether the question matches the document topic</button>
+<button class="quiz-opt" onclick="checkQ('q1',3)">D. The similarity between query and answer embeddings</button>
+<div class="quiz-feedback feedback-correct" id="q1-fb-correct">✅ Correct! Faithfulness measures whether every claim in the answer can be traced back to the retrieved context. Low faithfulness = hallucination.</div>
+<div class="quiz-feedback feedback-wrong" id="q1-fb-wrong">❌ Wrong. Faithfulness = answer claims that are supported by context / total answer claims. It's the anti-hallucination metric.</div>
+</div>
+<div class="quiz-q" id="q2">
+<p>2. When should you use the "Plan-and-Execute" agent pattern vs "ReAct"?</p>
+<button class="quiz-opt" onclick="checkQ('q2',0)">A. Plan-and-Execute when tasks are short; ReAct for long tasks</button>
+<button class="quiz-opt" onclick="checkQ('q2',1)">B. Plan-and-Execute for complex, predictable multi-step tasks; ReAct for dynamic tasks needing real-time decisions</button>
+<button class="quiz-opt" onclick="checkQ('q2',2)">C. ReAct is always better — it's more modern</button>
+<button class="quiz-opt" onclick="checkQ('q2',3)">D. They are identical patterns with different names</button>
+<div class="quiz-feedback feedback-correct" id="q2-fb-correct">✅ Correct! Plan-and-Execute: upfront planning → sequential execution (less adaptive but more predictable). ReAct: interleaved reasoning and acting (more flexible but can drift).</div>
+<div class="quiz-feedback feedback-wrong" id="q2-fb-wrong">❌ Wrong. Use Plan-and-Execute for structured multi-step tasks (e.g., report generation). Use ReAct for dynamic tool-use scenarios where the next step depends on tool results.</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ SECTION 2: MLOPS -->
+<section id="mlops">
+<h2>2. MLOps &amp; Production ML (Made With ML)</h2>
+<p class="section-intro">MLOps applies DevOps practices to ML workflows. The goal is reliable, reproducible, and scalable model deployment. Key pillars: data versioning, experiment tracking, model registry, CI/CD for ML, serving, and monitoring.</p>
+
+<h3>ML Development Lifecycle</h3>
+<div class="flow-box">
+  <div class="flow-node blue">Data Collection</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node orange">EDA + Feature Eng</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node green">Training + Eval</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node purple">Model Registry</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node blue">Deploy + Serve</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node orange">Monitor + Retrain</div>
+</div>
+
+<h3>Feature Engineering Patterns</h3>
+<div class="card">
+<pre><code class="language-python">import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Numerical features
+def engineer_numerical(df):
+    # Log transform for skewed distributions
+    df['log_price'] = np.log1p(df['price'])
+    # Binning
+    df['price_tier'] = pd.qcut(df['price'], q=4, labels=['low','med','high','premium'])
+    # Interaction features
+    df['price_per_sqft'] = df['price'] / (df['sqft'] + 1)
+    return df
+
+# Categorical encoding
+def encode_categoricals(df, high_card_cols, low_card_cols):
+    # High cardinality → target encoding (replace with mean of target)
+    for col in high_card_cols:
+        target_mean = df.groupby(col)['label'].mean()
+        df[f'{col}_encoded'] = df[col].map(target_mean)
+
+    # Low cardinality → one-hot
+    df = pd.get_dummies(df, columns=low_card_cols, drop_first=True)
+    return df
+
+# sklearn Pipeline (prevents leakage)
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('tfidf', TfidfVectorizer(max_features=10000)),
+    # ('model', LogisticRegression())
+])</code></pre>
+</div>
+
+<h3>Experiment Tracking with MLflow</h3>
+<div class="card">
+<pre><code class="language-python">import mlflow
+import mlflow.sklearn
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, f1_score
+
+mlflow.set_tracking_uri("http://localhost:5000")
+mlflow.set_experiment("lead-classifier-v2")
+
+with mlflow.start_run(run_name="rf-100trees"):
+    # Log hyperparameters
+    params = {"n_estimators": 100, "max_depth": 10, "min_samples_split": 5}
+    mlflow.log_params(params)
+
+    # Train
+    model = RandomForestClassifier(**params, random_state=42)
+    model.fit(X_train, y_train)
+
+    # Evaluate
+    y_pred = model.predict(X_test)
+    metrics = {
+        "accuracy": accuracy_score(y_test, y_pred),
+        "f1": f1_score(y_test, y_pred, average='weighted'),
+        "train_size": len(X_train)
+    }
+    mlflow.log_metrics(metrics)
+
+    # Log model artifact
+    mlflow.sklearn.log_model(model, "model", registered_model_name="LeadClassifier")
+
+    # Log additional artifacts
+    mlflow.log_artifact("feature_importance.csv")
+    mlflow.set_tags({"dataset": "v3", "engineer": "team-ml"})</code></pre>
+</div>
+
+<h3>Model Serving Patterns</h3>
+<div class="card">
+<table class="comparison-table">
+<tr><th>Pattern</th><th>Use case</th><th>Tools</th><th>Trade-off</th></tr>
+<tr><td><strong>REST API</strong></td><td>Standard web service inference</td><td>FastAPI + uvicorn</td><td>Simple but no streaming</td></tr>
+<tr><td><strong>Batch Inference</strong></td><td>Offline scoring of large datasets</td><td>Spark, AWS Batch, Airflow</td><td>High throughput, high latency</td></tr>
+<tr><td><strong>Streaming</strong></td><td>Real-time scoring on data streams</td><td>Kafka + Flink, Kinesis</td><td>Low latency, complex infra</td></tr>
+<tr><td><strong>Edge Inference</strong></td><td>On-device ML (mobile, IoT)</td><td>ONNX, TensorFlow Lite, CoreML</td><td>No network, limited model size</td></tr>
+<tr><td><strong>Serverless</strong></td><td>Infrequent, variable load</td><td>AWS Lambda, Modal</td><td>Cold starts, limited compute</td></tr>
+</table>
+</div>
+
+<h3>ML Monitoring — Data &amp; Concept Drift</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-red">CRITICAL</span><strong>Models degrade silently in production</strong></div>
+<pre><code class="language-python">from scipy import stats
+import numpy as np
+
+def detect_data_drift(reference_data, current_data, threshold=0.05):
+    """
+    Kolmogorov-Smirnov test for numerical feature drift.
+    Returns drifted features with p-values below threshold.
+    """
+    drifted = {}
+    for feature in reference_data.columns:
+        stat, p_value = stats.ks_2samp(
+            reference_data[feature].dropna(),
+            current_data[feature].dropna()
+        )
+        if p_value < threshold:
+            drifted[feature] = {"ks_stat": stat, "p_value": p_value}
+    return drifted
+
+# Types of drift:
+# 1. Data drift (covariate shift): P(X) changes, P(Y|X) same → feature distribution changed
+# 2. Concept drift: P(Y|X) changes → relationship between features and target changed
+# 3. Label drift: P(Y) changes → class distribution changed
+
+# Monitoring checklist:
+# ✅ Input feature distributions (daily histogram comparison)
+# ✅ Prediction score distributions
+# ✅ Model accuracy/F1 (requires ground truth labels)
+# ✅ Latency p50, p95, p99
+# ✅ Error rates (null predictions, out-of-range outputs)
+# ✅ Business metrics (click-through rate, conversion)</code></pre>
+</div>
+
+<div class="quiz-section">
+<h3>🧠 Quiz: MLOps</h3>
+<div class="quiz-q" id="q3">
+<p>3. What is the difference between "data drift" and "concept drift"?</p>
+<button class="quiz-opt" onclick="checkQ('q3',0)">A. Data drift is about model accuracy; concept drift is about data quality</button>
+<button class="quiz-opt" onclick="checkQ('q3',1)">B. Data drift: input feature distribution changes (P(X)); Concept drift: relationship between features and target changes (P(Y|X))</button>
+<button class="quiz-opt" onclick="checkQ('q3',2)">C. They are the same thing with different names</button>
+<button class="quiz-opt" onclick="checkQ('q3',3)">D. Data drift only happens with text; concept drift only with images</button>
+<div class="quiz-feedback feedback-correct" id="q3-fb-correct">✅ Correct! Data drift = your users changed (features look different). Concept drift = the world changed (same features now mean different outcomes). Both cause model degradation.</div>
+<div class="quiz-feedback feedback-wrong" id="q3-fb-wrong">❌ Wrong. Data drift = P(X) changes (feature distributions shift). Concept drift = P(Y|X) changes (the same feature values now predict differently). Both need monitoring.</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ SECTION 3: DEEP LEARNING -->
+<section id="deep-learning">
+<h2>3. Deep Learning Fundamentals</h2>
+<p class="section-intro">Based on Goodfellow et al. and Aurélien Géron's Hands-On ML3. Deep learning builds hierarchical representations through stacked layers of learnable transformations.</p>
+
+<h3>Neural Network Essentials</h3>
+<div class="card">
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import torch.optim as optim
+
+# Basic feedforward network
+class MLP(nn.Module):
+    def __init__(self, input_dim, hidden_dims, output_dim, dropout=0.3):
+        super().__init__()
+        layers = []
+        dims = [input_dim] + hidden_dims
+        for i in range(len(dims)-1):
+            layers.extend([
+                nn.Linear(dims[i], dims[i+1]),
+                nn.BatchNorm1d(dims[i+1]),
+                nn.ReLU(),
+                nn.Dropout(dropout)
+            ])
+        layers.append(nn.Linear(dims[-1], output_dim))
+        self.network = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.network(x)
+
+# Training loop
+model = MLP(input_dim=128, hidden_dims=[256, 128, 64], output_dim=10)
+optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
+criterion = nn.CrossEntropyLoss()
+
+for epoch in range(100):
+    model.train()
+    for batch_X, batch_y in train_loader:
+        optimizer.zero_grad()
+        logits = model(batch_X)
+        loss = criterion(logits, batch_y)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)  # Prevent exploding gradients
+        optimizer.step()
+    scheduler.step()</code></pre>
+</div>
+
+<h3>Key Activation Functions</h3>
+<div class="card">
+<table class="comparison-table">
+<tr><th>Activation</th><th>Formula</th><th>Use when</th><th>Problem</th></tr>
+<tr><td>Sigmoid</td><td>1/(1+e^−x)</td><td>Binary output layer</td><td>Vanishing gradient</td></tr>
+<tr><td>ReLU</td><td>max(0, x)</td><td>Hidden layers (default)</td><td>Dying neurons (x&lt;0)</td></tr>
+<tr><td>Leaky ReLU</td><td>max(0.01x, x)</td><td>When dying neurons are a problem</td><td>Hyperparameter 0.01</td></tr>
+<tr><td>GELU</td><td>x·Φ(x)</td><td>Transformers (BERT, GPT)</td><td>Slower than ReLU</td></tr>
+<tr><td>Softmax</td><td>e^xi / Σe^xj</td><td>Multi-class output layer</td><td>Not for hidden layers</td></tr>
+<tr><td>Tanh</td><td>(e^x−e^−x)/(e^x+e^−x)</td><td>RNNs, [-1,1] output needed</td><td>Vanishing gradient</td></tr>
+</table>
+</div>
+
+<h3>Transformer Architecture</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-purple">KEY CONCEPT</span><strong>The architecture behind GPT, BERT, Claude, etc.</strong></div>
+<p>Transformers replaced RNNs via <strong>self-attention</strong>: every token attends to every other token in parallel, enabling training on GPUs at scale.</p>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import math
+
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, d_model, num_heads):
+        super().__init__()
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+        self.W_q = nn.Linear(d_model, d_model)
+        self.W_k = nn.Linear(d_model, d_model)
+        self.W_v = nn.Linear(d_model, d_model)
+        self.W_o = nn.Linear(d_model, d_model)
+
+    def forward(self, x, mask=None):
+        B, T, D = x.shape
+        Q = self.W_q(x).view(B, T, self.num_heads, self.d_k).transpose(1, 2)
+        K = self.W_k(x).view(B, T, self.num_heads, self.d_k).transpose(1, 2)
+        V = self.W_v(x).view(B, T, self.num_heads, self.d_k).transpose(1, 2)
+
+        # Scaled dot-product attention
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(self.d_k)
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, -1e9)
+        attn = torch.softmax(scores, dim=-1)
+
+        out = torch.matmul(attn, V)
+        out = out.transpose(1, 2).contiguous().view(B, T, D)
+        return self.W_o(out)</code></pre>
+<div class="callout callout-info">
+<strong>ℹ️ Why attention works</strong>
+"Attention is all you need": instead of processing sequences step-by-step (RNN), attention computes all token relationships simultaneously. O(n²) memory but fully parallelizable → orders of magnitude faster training.
+</div>
+</div>
+
+<div class="quiz-section">
+<h3>🧠 Quiz: Deep Learning</h3>
+<div class="quiz-q" id="q4">
+<p>4. Why did Transformers replace RNNs for NLP tasks?</p>
+<button class="quiz-opt" onclick="checkQ('q4',0)">A. Transformers use less memory than RNNs</button>
+<button class="quiz-opt" onclick="checkQ('q4',1)">B. Transformers process sequences in parallel (no sequential bottleneck) and can model long-range dependencies better via attention</button>
+<button class="quiz-opt" onclick="checkQ('q4',2)">C. RNNs cannot handle text, only numbers</button>
+<button class="quiz-opt" onclick="checkQ('q4',3)">D. Transformers were invented before RNNs</button>
+<div class="quiz-feedback feedback-correct" id="q4-fb-correct">✅ Correct! RNNs process tokens sequentially (bottleneck for parallelization) and struggle with long-range dependencies due to vanishing gradients. Transformers: parallel computation + attention that reaches any distance.</div>
+<div class="quiz-feedback feedback-wrong" id="q4-fb-wrong">❌ Wrong. The key advantage: Transformers parallelize over the entire sequence (unlike RNNs' sequential processing) and attention directly connects any two tokens regardless of distance.</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ SECTION 4: SYSTEM DESIGN INTERVIEW -->
+<section id="system-design">
+<h2>4. System Design Interview Patterns</h2>
+<p class="section-intro">Based on the System Design Primer and Alex Xu's System Design Interview series. Master these 8 core patterns and you can tackle any system design interview question.</p>
+
+<h3>The RESHADED Framework</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-orange">INTERVIEW FRAMEWORK</span></div>
+<table class="comparison-table">
+<tr><th>Letter</th><th>Step</th><th>What to do</th></tr>
+<tr><td><strong>R</strong></td><td>Requirements</td><td>Functional (what it does) + Non-functional (scale, latency, availability)</td></tr>
+<tr><td><strong>E</strong></td><td>Estimation</td><td>QPS, storage, bandwidth. 100M users × 1 req/day = ~1.2K QPS</td></tr>
+<tr><td><strong>S</strong></td><td>Storage</td><td>What DB type? SQL vs NoSQL, indexing, sharding strategy</td></tr>
+<tr><td><strong>H</strong></td><td>High-Level Design</td><td>Draw boxes: client → LB → app servers → DB, cache, queue</td></tr>
+<tr><td><strong>A</strong></td><td>APIs</td><td>Define key endpoints: POST /posts, GET /feed?cursor=</td></tr>
+<tr><td><strong>D</strong></td><td>Deep Dive</td><td>Pick 2-3 hard problems: feed generation, notification fan-out, dedup</td></tr>
+<tr><td><strong>E</strong></td><td>Evaluation</td><td>Bottlenecks, failure modes, trade-offs you made</td></tr>
+<tr><td><strong>D</strong></td><td>Distinctive</td><td>What makes your design unique/optimal?</td></tr>
+</table>
+</div>
+
+<h3>URL Shortener (Classic Problem)</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-blue">DESIGN PROBLEM</span><strong>Design bit.ly / tinyurl.com</strong></div>
+<p><strong>Requirements:</strong> 100M URLs/day writes, 10B reads/day, 7-year retention, p99 redirect &lt;10ms</p>
+<pre><code class="language-python">import hashlib
+import base64
+import redis
+import psycopg2
+
+# Short code generation — Base62 encoding of MD5 hash
+def generate_short_code(long_url: str, length: int = 7) -> str:
+    # Take first 43 bits of MD5 → base62 encode
+    md5 = hashlib.md5(long_url.encode()).digest()
+    # Convert bytes to base62
+    alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    number = int.from_bytes(md5[:6], 'big')
+    code = ""
+    while number:
+        code = alphabet[number % 62] + code
+        number //= 62
+    return code[:length]  # "xK7mP2z"
+
+# Collision handling: if exists, append counter and rehash
+
+# High-performance redirect flow:
+# 1. Check Redis cache (hot URLs) → O(1)
+# 2. If miss → query DB → cache result with TTL
+# 3. Return 301 (cached by browser) or 302 (analytics tracking)
+
+class URLShortener:
+    def __init__(self):
+        self.redis = redis.Redis(host="redis", decode_responses=True)
+        self.db = psycopg2.connect(DATABASE_URL)
+
+    def redirect(self, code: str) -> str:
+        # 1. Cache hit
+        long_url = self.redis.get(f"url:{code}")
+        if long_url:
+            return long_url
+
+        # 2. DB lookup
+        with self.db.cursor() as cur:
+            cur.execute("SELECT long_url FROM urls WHERE code = %s", (code,))
+            row = cur.fetchone()
+            if not row:
+                raise KeyError("URL not found")
+            long_url = row[0]
+
+        # 3. Cache with 24h TTL
+        self.redis.setex(f"url:{code}", 86400, long_url)
+        return long_url</code></pre>
+<div class="callout callout-tip">
+<strong>💡 Scale decisions</strong>
+301 vs 302: Use 302 to keep analytics (server sees each redirect). Use 301 for CDN caching (browser caches, no server hit).
+Sharding: Range-based on code prefix vs hash-based. Hash = even distribution. Store full URL in object storage for very long URLs.
+</div>
+</div>
+
+<h3>Design a Rate Limiter</h3>
+<div class="card">
+<pre><code class="language-python">import redis
+import time
+
+class TokenBucketRateLimiter:
+    """
+    Token Bucket: allows burst traffic up to bucket capacity.
+    Tokens refill at a fixed rate. Best for APIs with bursty traffic.
+    """
+    def __init__(self, redis_client, capacity: int, refill_rate: float):
+        self.redis = redis_client
+        self.capacity = capacity       # Max burst: 100 requests
+        self.refill_rate = refill_rate # Tokens/second: 10 req/s sustained
+
+    def is_allowed(self, user_id: str) -> bool:
+        key = f"rate:{user_id}"
+        now = time.time()
+        pipe = self.redis.pipeline()
+
+        pipe.hget(key, "tokens")
+        pipe.hget(key, "last_refill")
+        tokens_str, last_refill_str = pipe.execute()
+
+        tokens = float(tokens_str or self.capacity)
+        last_refill = float(last_refill_str or now)
+
+        # Refill tokens based on elapsed time
+        elapsed = now - last_refill
+        tokens = min(self.capacity, tokens + elapsed * self.refill_rate)
+
+        if tokens < 1:
+            return False  # Rate limited!
+
+        # Consume one token
+        self.redis.hset(key, mapping={"tokens": tokens - 1, "last_refill": now})
+        self.redis.expire(key, 3600)
+        return True
+
+# Sliding Window Counter (more accurate, slightly more memory)
+class SlidingWindowRateLimiter:
+    def __init__(self, redis_client, limit: int, window_seconds: int):
+        self.redis = redis_client
+        self.limit = limit
+        self.window = window_seconds
+
+    def is_allowed(self, user_id: str) -> bool:
+        key = f"sw:{user_id}"
+        now = time.time()
+        window_start = now - self.window
+
+        pipe = self.redis.pipeline()
+        pipe.zremrangebyscore(key, 0, window_start)  # Remove old requests
+        pipe.zadd(key, {str(now): now})               # Add current request
+        pipe.zcard(key)                                # Count in window
+        pipe.expire(key, self.window)
+        _, _, count, _ = pipe.execute()
+
+        return count <= self.limit</code></pre>
+</div>
+
+<h3>Design Twitter/X Feed</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-blue">DESIGN PROBLEM</span><strong>Fan-out on write vs Fan-out on read</strong></div>
+<table class="comparison-table">
+<tr><th>Approach</th><th>Fan-out on Write (Push)</th><th>Fan-out on Read (Pull)</th></tr>
+<tr><td><strong>How it works</strong></td><td>When user tweets, push to all followers' feeds immediately</td><td>At read time, merge tweets from all followed users</td></tr>
+<tr><td><strong>Read latency</strong></td><td>⚡ Very fast (pre-computed)</td><td>🐌 Slow for users with many followings</td></tr>
+<tr><td><strong>Write latency</strong></td><td>🐌 Slow for celebrities (1M+ followers)</td><td>⚡ Fast (just write one row)</td></tr>
+<tr><td><strong>Best for</strong></td><td>Regular users (&lt;10K followers)</td><td>Celebrities / power users</td></tr>
+<tr><td><strong>Twitter's solution</strong></td><td colspan="2">Hybrid: push for regular users, pull for celebrities (Lady Gaga problem)</td></tr>
+</table>
+</div>
+
+<h3>CAP Theorem</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-purple">FUNDAMENTAL</span><strong>In a distributed system: choose 2 of 3</strong></div>
+<table class="comparison-table">
+<tr><th>Property</th><th>Meaning</th><th>Example</th></tr>
+<tr><td><strong>Consistency (C)</strong></td><td>Every read gets the most recent write</td><td>Bank balance: always correct</td></tr>
+<tr><td><strong>Availability (A)</strong></td><td>Every request gets a response (not an error)</td><td>Always responds, might be stale</td></tr>
+<tr><td><strong>Partition Tolerance (P)</strong></td><td>Works despite network partitions</td><td>Required in any distributed system</td></tr>
+</table>
+<div class="callout callout-warn">
+<strong>⚠️ The Real Choice</strong>
+Since network partitions WILL happen, you're always choosing between C and A during a partition:
+CA systems (SQL): Consistent + available, halt on partitions → Postgres, MySQL
+CP systems: Consistent when partitioned, sacrifice availability → HBase, Zookeeper, etcd
+AP systems: Available when partitioned, sacrifice consistency → Cassandra, DynamoDB, CouchDB
+</div>
+</div>
+
+<div class="quiz-section">
+<h3>🧠 Quiz: System Design</h3>
+<div class="quiz-q" id="q5">
+<p>5. Twitter has a celebrity with 50M followers. They post a tweet. Why is "fan-out on write" problematic here?</p>
+<button class="quiz-opt" onclick="checkQ('q5',0)">A. The tweet will contain too many characters</button>
+<button class="quiz-opt" onclick="checkQ('q5',1)">B. Writing to 50M follower feed entries simultaneously creates a massive write amplification spike that overloads the system</button>
+<button class="quiz-opt" onclick="checkQ('q5',2)">C. Fan-out on write doesn't support images</button>
+<button class="quiz-opt" onclick="checkQ('q5',3)">D. Redis cannot store that many entries</button>
+<div class="quiz-feedback feedback-correct" id="q5-fb-correct">✅ Correct! 1 tweet → 50M write operations is write amplification. Even at 100K writes/second, it takes 500 seconds (8+ minutes). Twitter uses a hybrid: push for regular users, pull for celebrities.</div>
+<div class="quiz-feedback feedback-wrong" id="q5-fb-wrong">❌ Wrong. Fan-out on write for 50M followers = 50M Redis/DB writes per tweet. This causes massive spike and delays. The solution: pull-on-read for high-follower accounts.</div>
+</div>
+<div class="quiz-q" id="q6">
+<p>6. Cassandra is described as an AP system. What does this mean in practice?</p>
+<button class="quiz-opt" onclick="checkQ('q6',0)">A. Cassandra always returns the most up-to-date data</button>
+<button class="quiz-opt" onclick="checkQ('q6',1)">B. During a network partition, Cassandra stays available (returns responses) but may return slightly stale data (eventual consistency)</button>
+<button class="quiz-opt" onclick="checkQ('q6',2)">C. Cassandra never has network partitions</button>
+<button class="quiz-opt" onclick="checkQ('q6',3)">D. Cassandra prioritizes consistency over availability</button>
+<div class="quiz-feedback feedback-correct" id="q6-fb-correct">✅ Correct! AP = Available + Partition-tolerant. During a split-brain scenario, Cassandra keeps responding (no downtime) but nodes may have different versions of the data. It reconciles later (eventual consistency).</div>
+<div class="quiz-feedback feedback-wrong" id="q6-fb-wrong">❌ Wrong. AP systems prioritize availability over consistency. Cassandra uses eventual consistency — all nodes converge to the same value eventually, but reads during partitions may be stale.</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ SECTION 5: AWS WELL-ARCHITECTED -->
+<section id="aws">
+<h2>5. AWS Well-Architected Framework</h2>
+<p class="section-intro">The AWS Well-Architected Framework provides six pillars for building secure, high-performing, resilient, and efficient cloud infrastructure. Every solution architect interview will test these.</p>
+
+<div class="pillar-grid">
+  <div class="pillar">
+    <h4 style="color:var(--blue)">🔧 Operational Excellence</h4>
+    <ul>
+      <li>Infrastructure as Code (CloudFormation, CDK)</li>
+      <li>Runbooks + playbooks for operations</li>
+      <li>Observability: metrics, logs, traces (CloudWatch, X-Ray)</li>
+      <li>CI/CD pipelines (CodePipeline, CodeDeploy)</li>
+      <li>Feature flags for safe rollouts</li>
+      <li>Game days / chaos engineering</li>
+    </ul>
+  </div>
+  <div class="pillar">
+    <h4 style="color:var(--red)">🔒 Security</h4>
+    <ul>
+      <li>Least privilege IAM policies</li>
+      <li>Data encryption at rest (KMS) + in transit (TLS)</li>
+      <li>VPC isolation, security groups, NACLs</li>
+      <li>AWS WAF + Shield for DDoS protection</li>
+      <li>Secrets Manager / Parameter Store</li>
+      <li>CloudTrail audit logging</li>
+      <li>Guard Duty threat detection</li>
+    </ul>
+  </div>
+  <div class="pillar">
+    <h4 style="color:var(--green)">🔄 Reliability</h4>
+    <ul>
+      <li>Multi-AZ deployments (RDS, ALB, ECS)</li>
+      <li>Auto-scaling groups for demand spikes</li>
+      <li>Circuit breakers + retries with backoff</li>
+      <li>Health checks + automated failover</li>
+      <li>Backup and restore (RPO/RTO targets)</li>
+      <li>SQS/SNS for async decoupling</li>
+    </ul>
+  </div>
+  <div class="pillar">
+    <h4 style="color:var(--orange)">⚡ Performance Efficiency</h4>
+    <ul>
+      <li>Right-size EC2 instances (use Graviton ARM)</li>
+      <li>CloudFront CDN for static assets</li>
+      <li>ElastiCache (Redis/Memcached) for hot data</li>
+      <li>Aurora Serverless for variable DB workloads</li>
+      <li>Lambda for burst compute</li>
+      <li>SageMaker for ML inference at scale</li>
+    </ul>
+  </div>
+  <div class="pillar">
+    <h4 style="color:var(--cyan)">💰 Cost Optimization</h4>
+    <ul>
+      <li>Reserved Instances (1-3yr) for stable workloads</li>
+      <li>Spot Instances for fault-tolerant batch jobs</li>
+      <li>S3 Intelligent-Tiering for infrequent access</li>
+      <li>AWS Cost Explorer + Budgets + Alerts</li>
+      <li>Graviton2/3 instances (40% cheaper than x86)</li>
+      <li>Consolidate CloudWatch log retention</li>
+    </ul>
+  </div>
+  <div class="pillar">
+    <h4 style="color:var(--purple)">🌱 Sustainability</h4>
+    <ul>
+      <li>Use managed services (AWS handles hardware eff.)</li>
+      <li>Graviton = lower energy per compute unit</li>
+      <li>Serverless = no idle resources</li>
+      <li>Optimize code to reduce compute time</li>
+      <li>Use closest AWS region to users</li>
+      <li>Data lifecycle policies to delete old data</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Key AWS Services for AI/ML Workloads</h3>
+<div class="card">
+<table class="comparison-table">
+<tr><th>Service</th><th>Use case</th><th>When to use</th></tr>
+<tr><td><strong>SageMaker</strong></td><td>End-to-end ML: train, tune, deploy</td><td>Custom ML models at scale</td></tr>
+<tr><td><strong>Bedrock</strong></td><td>Managed API for foundation models</td><td>Claude, Llama, Titan without infra</td></tr>
+<tr><td><strong>Lambda</strong></td><td>Serverless inference / preprocessing</td><td>Event-driven, short-duration tasks</td></tr>
+<tr><td><strong>ECS/EKS</strong></td><td>Containerized model serving</td><td>Long-running services, microservices</td></tr>
+<tr><td><strong>DynamoDB</strong></td><td>Key-value / document store</td><td>Session state, user profiles, feature store</td></tr>
+<tr><td><strong>Aurora PostgreSQL</strong></td><td>Managed Postgres + pgvector</td><td>RAG apps with vector search</td></tr>
+<tr><td><strong>Kinesis Data Streams</strong></td><td>Real-time data ingestion</td><td>Streaming ML feature pipeline</td></tr>
+<tr><td><strong>Step Functions</strong></td><td>Serverless workflow orchestration</td><td>ML training pipelines, data ETL</td></tr>
+</table>
+</div>
+
+<div class="quiz-section">
+<h3>🧠 Quiz: AWS Well-Architected</h3>
+<div class="quiz-q" id="q7">
+<p>7. Your app needs to serve ML predictions to 10M users globally with &lt;50ms latency. Which AWS services are most critical?</p>
+<button class="quiz-opt" onclick="checkQ('q7',0)">A. EC2 with a single large instance</button>
+<button class="quiz-opt" onclick="checkQ('q7',1)">B. CloudFront (CDN) + ElastiCache + SageMaker endpoints with multi-region deployment + Auto Scaling</button>
+<button class="quiz-opt" onclick="checkQ('q7',2)">C. S3 static hosting + Lambda</button>
+<button class="quiz-opt" onclick="checkQ('q7',3)">D. RDS Multi-AZ is sufficient</button>
+<div class="quiz-feedback feedback-correct" id="q7-fb-correct">✅ Correct! For global low-latency ML: CloudFront to cache predictions, ElastiCache for hot results, SageMaker with multi-region endpoints, Auto Scaling for demand spikes.</div>
+<div class="quiz-feedback feedback-wrong" id="q7-fb-wrong">❌ Wrong. Single instance = single point of failure + no global coverage. The solution: CDN + caching + multi-region SageMaker endpoints + Auto Scaling.</div>
+</div>
+<div class="quiz-q" id="q8">
+<p>8. Under the "Reliability" pillar, what is the purpose of the Circuit Breaker pattern?</p>
+<button class="quiz-opt" onclick="checkQ('q8',0)">A. To encrypt all traffic between services</button>
+<button class="quiz-opt" onclick="checkQ('q8',1)">B. To prevent cascading failures by stopping requests to a failing service and allowing it to recover</button>
+<button class="quiz-opt" onclick="checkQ('q8',2)">C. To balance load evenly across servers</button>
+<button class="quiz-opt" onclick="checkQ('q8',3)">D. To monitor CPU usage and trigger auto-scaling</button>
+<div class="quiz-feedback feedback-correct" id="q8-fb-correct">✅ Correct! Circuit breaker: CLOSED (normal) → OPEN (failing service, fail fast) → HALF-OPEN (test if recovered). Prevents one slow service from blocking your entire system.</div>
+<div class="quiz-feedback feedback-wrong" id="q8-fb-wrong">❌ Wrong. Circuit breaker prevents cascading failures. When a service fails repeatedly, the circuit "opens" and requests fail fast without waiting — preventing timeout pile-ups from bringing down everything.</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ SECTION 6: DEVOPS -->
+<section id="devops">
+<h2>6. DevOps for AI Applications</h2>
+<p class="section-intro">Modern AI applications require robust CI/CD, containerization, orchestration, and observability pipelines. These are the skills that separate junior from senior AI engineers.</p>
+
+<h3>CI/CD Pipeline for ML</h3>
+<div class="card">
+<pre><code class="language-yaml"># .github/workflows/ml-pipeline.yml
+name: ML CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest tests/ -v --cov=src --cov-report=xml
+
+      - name: Data validation
+        run: python scripts/validate_data_schema.py
+
+      - name: Model quality gate
+        run: |
+          python scripts/evaluate_model.py --min-f1=0.85
+          # Fails build if F1 drops below 0.85
+
+  build-and-push:
+    needs: test-and-validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Build Docker image
+        run: docker build -t $ECR_REPO:$GITHUB_SHA .
+
+      - name: Push to ECR
+        run: |
+          aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REGISTRY
+          docker push $ECR_REPO:$GITHUB_SHA
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster production \
+            --service ai-api \
+            --force-new-deployment</code></pre>
+</div>
+
+<h3>Kubernetes for AI Apps</h3>
+<div class="card">
+<pre><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-inference-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ai-inference
+  template:
+    metadata:
+      labels:
+        app: ai-inference
+    spec:
+      containers:
+        - name: api
+          image: my-ecr/ai-api:latest
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: anthropic-key
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-api-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-inference-api
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70</code></pre>
+</div>
+
+<h3>Observability Stack for AI</h3>
+<div class="card">
+<table class="comparison-table">
+<tr><th>Layer</th><th>What to monitor</th><th>Tools</th></tr>
+<tr><td><strong>Infrastructure</strong></td><td>CPU, memory, disk, network</td><td>Prometheus + Grafana, CloudWatch</td></tr>
+<tr><td><strong>Application</strong></td><td>Request latency, error rate, throughput</td><td>OpenTelemetry, Datadog, New Relic</td></tr>
+<tr><td><strong>LLM-specific</strong></td><td>Token usage, model latency, cache hit rate</td><td>LangFuse, Arize, LangSmith</td></tr>
+<tr><td><strong>Business</strong></td><td>Accuracy, user satisfaction, conversion</td><td>Custom dashboards, Mixpanel</td></tr>
+</table>
+<pre><code class="language-python">import langfuse
+from functools import wraps
+
+# LangFuse for LLM observability
+lf = langfuse.Langfuse(
+    public_key="pk-...",
+    secret_key="sk-...",
+    host="https://cloud.langfuse.com"
+)
+
+def trace_llm_call(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        trace = lf.trace(name=func.__name__)
+        generation = trace.generation(
+            name="claude-call",
+            model="claude-sonnet-4-6",
+            input=kwargs.get("prompt")
+        )
+        try:
+            result = await func(*args, **kwargs)
+            generation.end(output=result, usage={"input": 100, "output": 50})
+            return result
+        except Exception as e:
+            generation.end(level="ERROR", status_message=str(e))
+            raise
+    return wrapper</code></pre>
+</div>
+
+<div class="quiz-section">
+<h3>🧠 Quiz: DevOps for AI</h3>
+<div class="quiz-q" id="q9">
+<p>9. In a Kubernetes HPA (Horizontal Pod Autoscaler), what does <code class="inline">averageUtilization: 70</code> on CPU mean?</p>
+<button class="quiz-opt" onclick="checkQ('q9',0)">A. Pods get killed when CPU exceeds 70%</button>
+<button class="quiz-opt" onclick="checkQ('q9',1)">B. K8s scales out pods to keep average CPU across all pods near 70% of their CPU request</button>
+<button class="quiz-opt" onclick="checkQ('q9',2)">C. Only 70% of pods can run at any time</button>
+<button class="quiz-opt" onclick="checkQ('q9',3)">D. The app uses 70% of total cluster CPU</button>
+<div class="quiz-feedback feedback-correct" id="q9-fb-correct">✅ Correct! HPA scales replicas to maintain average CPU utilization near 70% of the requested CPU. If average goes to 140%, HPA doubles the pod count. If it drops to 35%, HPA scales down.</div>
+<div class="quiz-feedback feedback-wrong" id="q9-fb-wrong">❌ Wrong. HPA continuously adjusts replica count to keep average CPU across all pods near the target utilization. Scale up when exceeding target, scale down when below.</div>
+</div>
+<div class="quiz-q" id="q10">
+<p>10. What is the main advantage of using LangFuse for LLM observability over generic tools like Datadog?</p>
+<button class="quiz-opt" onclick="checkQ('q10',0)">A. LangFuse is cheaper than Datadog</button>
+<button class="quiz-opt" onclick="checkQ('q10',1)">B. LangFuse provides LLM-specific telemetry: prompt/response logging, token costs, chain tracing, and evaluation scores — things Datadog doesn't natively support</button>
+<button class="quiz-opt" onclick="checkQ('q10',2)">C. LangFuse works with Kubernetes; Datadog does not</button>
+<button class="quiz-opt" onclick="checkQ('q10',3)">D. LangFuse auto-optimizes prompts</button>
+<div class="quiz-feedback feedback-correct" id="q10-fb-correct">✅ Correct! LangFuse is purpose-built for LLM apps: traces full chains, logs prompts/responses, tracks token costs per user, and allows attaching quality scores. Generic APM tools miss this LLM-specific context.</div>
+<div class="quiz-feedback feedback-wrong" id="q10-fb-wrong">❌ Wrong. LangFuse is LLM-native: it understands chains, tool calls, generation metadata, and evaluation. Generic tools only see HTTP requests, not the semantics of LLM interactions.</div>
+</div>
+</div>
+</section>
+
+<!-- Final Score -->
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:32px 0;text-align:center">
+  <h3 style="color:var(--purple);margin-bottom:8px">🏆 Part 5 Score</h3>
+  <div id="final-score" style="font-size:32px;font-weight:700;color:var(--blue)">—</div>
+  <p style="color:var(--t2);margin-top:4px">Answer all questions to see your score</p>
+  <button onclick="calcScore()" style="margin-top:12px;padding:10px 24px;background:var(--purple);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px">Calculate Score</button>
+</div>
+
+<!-- Navigation Footer -->
+<div style="display:flex;justify-content:space-between;margin-top:48px;padding-top:24px;border-top:1px solid var(--border)">
+  <a href="part4.html" style="color:var(--t2)">← Part 4: AI Frameworks &amp; APIs</a>
+  <a href="index.html" style="color:var(--blue)">Back to Home →</a>
+</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script>
+const answers = {q1:1,q2:1,q3:1,q4:1,q5:1,q6:1,q7:1,q8:1,q9:1,q10:1};
+const answered = {};
+function checkQ(qid, chosen) {
+  if (answered[qid]) return;
+  answered[qid] = chosen;
+  const correct = answers[qid];
+  const opts = document.querySelectorAll(`#${qid} .quiz-opt`);
+  opts.forEach(o => o.disabled = true);
+  opts[chosen].classList.add(chosen === correct ? 'correct' : 'wrong');
+  if (chosen !== correct) opts[correct].classList.add('correct');
+  document.getElementById(`${qid}-fb-correct`).style.display = chosen === correct ? 'block' : 'none';
+  document.getElementById(`${qid}-fb-wrong`).style.display = chosen !== correct ? 'block' : 'none';
+}
+function calcScore() {
+  const total = Object.keys(answers).length;
+  const correct = Object.entries(answered).filter(([k,v]) => v === answers[k]).length;
+  const pct = Math.round((correct/total)*100);
+  const el = document.getElementById('final-score');
+  el.textContent = `${correct}/${total} (${pct}%)`;
+  el.style.color = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--orange)' : 'var(--red)';
+}
+</script>
+</body>
+</html>
