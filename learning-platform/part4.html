@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 4: AI Frameworks & APIs | Learning Platform</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--t1:#e6edf3;--t2:#8b949e;--border:#30363d;--blue:#58a6ff;--green:#3fb950;--orange:#d29922;--purple:#bc8cff;--red:#f85149;--cyan:#39d353;--pink:#ff7b72}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.7}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+.nav-brand{color:var(--blue);font-weight:700;font-size:14px;margin-right:8px}
+.nav-pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border);color:var(--t2);background:transparent;cursor:pointer}
+.nav-pill:hover{border-color:var(--blue);color:var(--blue)}
+.nav-pill.active{background:var(--blue);color:#000;border-color:var(--blue)}
+.nav-pill a{color:inherit;text-decoration:none}
+main{max-width:960px;margin:0 auto;padding:32px 20px 80px}
+h1{font-size:28px;font-weight:700;margin-bottom:8px;color:var(--t1)}
+.subtitle{color:var(--t2);font-size:15px;margin-bottom:32px}
+h2{font-size:22px;font-weight:700;margin:48px 0 16px;color:var(--t1);border-bottom:1px solid var(--border);padding-bottom:8px}
+h3{font-size:17px;font-weight:600;margin:24px 0 12px;color:var(--blue)}
+h4{font-size:14px;font-weight:600;margin:16px 0 8px;color:var(--orange);text-transform:uppercase;letter-spacing:.5px}
+p{margin-bottom:12px;color:var(--t1)}
+ul,ol{margin:0 0 12px 24px;color:var(--t1)}li{margin-bottom:4px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:20px}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;letter-spacing:.5px}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--blue);border:1px solid rgba(88,166,255,.3)}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.badge-orange{background:rgba(210,153,34,.15);color:var(--orange);border:1px solid rgba(210,153,34,.3)}
+.badge-purple{background:rgba(188,140,255,.15);color:var(--purple);border:1px solid rgba(188,140,255,.3)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+.badge-cyan{background:rgba(57,211,83,.15);color:var(--cyan);border:1px solid rgba(57,211,83,.3)}
+pre{border-radius:6px;margin:12px 0;overflow-x:auto;font-size:13px}
+code.inline{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:13px;color:var(--orange)}
+.callout{border-radius:6px;padding:14px 16px;margin:16px 0;border-left:3px solid}
+.callout-tip{background:rgba(63,185,80,.08);border-color:var(--green)}
+.callout-info{background:rgba(88,166,255,.08);border-color:var(--blue)}
+.callout-warn{background:rgba(210,153,34,.08);border-color:var(--orange)}
+.callout-danger{background:rgba(248,81,73,.08);border-color:var(--red)}
+.callout strong{display:block;margin-bottom:4px;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.callout-tip strong{color:var(--green)}
+.callout-info strong{color:var(--blue)}
+.callout-warn strong{color:var(--orange)}
+.callout-danger strong{color:var(--red)}
+.comparison-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+.comparison-table th{background:var(--bg3);padding:10px 14px;text-align:left;border:1px solid var(--border);color:var(--t2);font-size:12px;text-transform:uppercase}
+.comparison-table td{padding:10px 14px;border:1px solid var(--border);vertical-align:top}
+.comparison-table tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+.quiz-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:32px 0}
+.quiz-section h3{margin-top:0;color:var(--purple)}
+.quiz-q{margin-bottom:20px;padding:16px;background:var(--bg3);border-radius:6px}
+.quiz-q p{margin-bottom:10px;font-weight:500}
+.quiz-opt{display:block;padding:8px 12px;margin:4px 0;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--t1);font-size:14px;width:100%;text-align:left;transition:all .15s}
+.quiz-opt:hover{border-color:var(--blue);background:rgba(88,166,255,.08)}
+.quiz-opt.correct{background:rgba(63,185,80,.15);border-color:var(--green);color:var(--green)}
+.quiz-opt.wrong{background:rgba(248,81,73,.15);border-color:var(--red);color:var(--red)}
+.quiz-feedback{margin-top:8px;font-size:13px;padding:8px 12px;border-radius:4px;display:none}
+.feedback-correct{background:rgba(63,185,80,.1);border:1px solid var(--green);color:var(--green)}
+.feedback-wrong{background:rgba(248,81,73,.1);border:1px solid var(--red);color:var(--red)}
+.models-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
+.model-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px}
+.model-card h4{margin-top:0;color:var(--orange)}
+.model-stat{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px}
+.model-stat:last-child{border-bottom:none}
+.model-stat span{color:var(--t2)}
+.flow-box{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+.flow-node{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600}
+.flow-node.blue{border-color:var(--blue);color:var(--blue)}
+.flow-node.green{border-color:var(--green);color:var(--green)}
+.flow-node.orange{border-color:var(--orange);color:var(--orange)}
+.flow-node.purple{border-color:var(--purple);color:var(--purple)}
+.flow-arrow{color:var(--t2);font-size:18px}
+.pill-group{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.pill{padding:3px 10px;border-radius:12px;font-size:12px;background:var(--bg3);border:1px solid var(--border);color:var(--t2)}
+section{margin-bottom:48px}
+.section-intro{color:var(--t2);font-size:15px;margin-bottom:20px;padding:16px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--blue)}
+</style>
+</head>
+<body>
+<nav>
+  <span class="nav-brand">🧠 Learn Platform</span>
+  <span class="nav-pill"><a href="index.html">Part 1: FastAPI & Pydantic</a></span>
+  <span class="nav-pill"><a href="part2.html">Part 2: LangGraph & Claude API</a></span>
+  <span class="nav-pill"><a href="part3.html">Part 3: pgvector, RAG & Docker</a></span>
+  <span class="nav-pill active">Part 4: AI Frameworks & APIs</span>
+  <span class="nav-pill"><a href="part5.html">Part 5: Production ML & System Design</a></span>
+</nav>
+<main>
+<h1>Part 4: AI Frameworks &amp; APIs</h1>
+<p class="subtitle">Deep-dive into Anthropic Claude API, OpenAI API, advanced LangGraph, Semantic Kernel, and Model Context Protocol (MCP)</p>
+
+<!-- ============================================================ SECTION 1: CLAUDE API -->
+<section id="claude-api">
+<h2>1. Anthropic Claude API</h2>
+<p class="section-intro">Claude is Anthropic's family of large language models. The API follows the Messages format — stateless, with explicit system/human/assistant turns. Understanding the model tiers, pricing, and advanced features like prompt caching and tool use is essential for production AI apps.</p>
+
+<h3>Model Tiers (as of 2025–2026)</h3>
+<div class="models-grid">
+  <div class="model-card">
+    <h4>Claude Opus 4.7</h4>
+    <div class="model-stat"><strong>ID</strong><span>claude-opus-4-7</span></div>
+    <div class="model-stat"><strong>Context</strong><span>200K tokens</span></div>
+    <div class="model-stat"><strong>Best for</strong><span>Complex reasoning, coding agents</span></div>
+    <div class="model-stat"><strong>Speed</strong><span>Slower, most capable</span></div>
+  </div>
+  <div class="model-card">
+    <h4>Claude Sonnet 4.6</h4>
+    <div class="model-stat"><strong>ID</strong><span>claude-sonnet-4-6</span></div>
+    <div class="model-stat"><strong>Context</strong><span>200K tokens</span></div>
+    <div class="model-stat"><strong>Best for</strong><span>Production balance — speed + quality</span></div>
+    <div class="model-stat"><strong>Speed</strong><span>Fast, great throughput</span></div>
+  </div>
+  <div class="model-card">
+    <h4>Claude Haiku 4.5</h4>
+    <div class="model-stat"><strong>ID</strong><span>claude-haiku-4-5-20251001</span></div>
+    <div class="model-stat"><strong>Context</strong><span>200K tokens</span></div>
+    <div class="model-stat"><strong>Best for</strong><span>High-volume, low-latency tasks</span></div>
+    <div class="model-stat"><strong>Speed</strong><span>Fastest, cheapest</span></div>
+  </div>
+</div>
+
+<h3>Messages API Structure</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-blue">CORE</span><strong>Every API call is a Messages request</strong></div>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic(api_key="sk-ant-...")
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    system="You are a senior Python engineer. Be concise.",
+    messages=[
+        {"role": "user", "content": "Explain async/await in 3 bullet points"}
+    ]
+)
+print(message.content[0].text)
+
+# Response object structure:
+# message.id          → unique message ID
+# message.model       → model used
+# message.usage       → {input_tokens, output_tokens}
+# message.stop_reason → "end_turn" | "max_tokens" | "tool_use"
+# message.content     → list of content blocks</code></pre>
+</div>
+
+<h3>Tool Use (Function Calling)</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-green">ADVANCED</span><strong>Give Claude access to external functions</strong></div>
+<p>Tool use lets Claude call external functions in a structured loop. You define tools, Claude decides when to call them, you execute and return results.</p>
+<pre><code class="language-python">tools = [
+    {
+        "name": "get_weather",
+        "description": "Get current weather for a city",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "city": {"type": "string", "description": "City name"},
+                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
+            },
+            "required": ["city"]
+        }
+    }
+]
+
+# First call — Claude decides to use tool
+response = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    tools=tools,
+    messages=[{"role": "user", "content": "What's the weather in London?"}]
+)
+
+# response.stop_reason == "tool_use"
+tool_use = response.content[1]  # ToolUseBlock
+tool_name = tool_use.name       # "get_weather"
+tool_input = tool_use.input     # {"city": "London"}
+
+# Execute the tool yourself
+result = my_get_weather(tool_input["city"])
+
+# Second call — send back the result
+response2 = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    tools=tools,
+    messages=[
+        {"role": "user", "content": "What's the weather in London?"},
+        {"role": "assistant", "content": response.content},
+        {"role": "user", "content": [
+            {
+                "type": "tool_result",
+                "tool_use_id": tool_use.id,
+                "content": f"Weather: {result}"
+            }
+        ]}
+    ]
+)</code></pre>
+
+<div class="callout callout-tip">
+<strong>💡 Tip</strong>
+Use <code class="inline">tool_choice={"type": "any"}</code> to force Claude to use a tool, or <code class="inline">{"type": "tool", "name": "..."}</code> to force a specific tool. Default is <code class="inline">{"type": "auto"}</code>.
+</div>
+</div>
+
+<h3>Prompt Caching</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-orange">COST SAVING</span><strong>Cache repeated context — up to 90% cost reduction</strong></div>
+<p>Prompt caching stores expensive prefill computations server-side for 5 minutes (or 1 hour with extended cache). Reusing a 100K-token system prompt cuts costs from $3/M to $0.30/M tokens.</p>
+<pre><code class="language-python"># Mark content for caching with cache_control
+response = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    system=[
+        {
+            "type": "text",
+            "text": "You are an expert code reviewer...",
+            "cache_control": {"type": "ephemeral"}  # Cache this block
+        },
+        {
+            "type": "text",
+            "text": long_codebase_context,  # 50K token codebase
+            "cache_control": {"type": "ephemeral"}  # Cache this too
+        }
+    ],
+    messages=[{"role": "user", "content": "Review the auth module"}]
+)
+
+# Check cache performance
+usage = response.usage
+print(f"Cache creation tokens: {usage.cache_creation_input_tokens}")
+print(f"Cache read tokens: {usage.cache_read_input_tokens}")  # Cheap!
+print(f"Regular input tokens: {usage.input_tokens}")
+
+# Pricing comparison (Sonnet):
+# Regular input:  $3.00 / 1M tokens
+# Cache write:    $3.75 / 1M tokens (one-time)
+# Cache read:     $0.30 / 1M tokens (90% cheaper!)</code></pre>
+</div>
+
+<h3>Streaming</h3>
+<div class="card">
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+# Method 1: stream context manager (recommended)
+with client.messages.stream(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Write a haiku about Python"}]
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+
+    final_message = stream.get_final_message()
+    print(f"\nTotal tokens: {final_message.usage.input_tokens + final_message.usage.output_tokens}")
+
+# Method 2: raw events
+with client.messages.stream(...) as stream:
+    for event in stream:
+        if event.type == "content_block_delta":
+            print(event.delta.text, end="", flush=True)
+        elif event.type == "message_delta":
+            print(f"\nStop reason: {event.delta.stop_reason}")</code></pre>
+</div>
+
+<h3>Vision / Multimodal</h3>
+<div class="card">
+<pre><code class="language-python">import base64
+
+# Option 1: URL
+response = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "image", "source": {"type": "url", "url": "https://example.com/diagram.png"}},
+            {"type": "text", "text": "Explain this architecture diagram"}
+        ]
+    }]
+)
+
+# Option 2: Base64
+with open("screenshot.png", "rb") as f:
+    image_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+response = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "image", "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": image_data
+            }},
+            {"type": "text", "text": "What bugs do you see in this code screenshot?"}
+        ]
+    }]
+)</code></pre>
+</div>
+
+<h3>Extended Thinking</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-purple">REASONING</span><strong>Let Claude think before answering</strong></div>
+<pre><code class="language-python">response = client.messages.create(
+    model="claude-opus-4-7",  # Thinking works best with Opus
+    max_tokens=16000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 10000  # How much Claude can think
+    },
+    messages=[{"role": "user", "content": "Design a rate limiter for 1M RPS"}]
+)
+
+for block in response.content:
+    if block.type == "thinking":
+        print("THINKING:", block.thinking)  # Internal reasoning
+    elif block.type == "text":
+        print("ANSWER:", block.text)        # Final answer</code></pre>
+<div class="callout callout-info">
+<strong>ℹ️ When to use</strong>
+Extended thinking is best for: complex multi-step reasoning, math/logic problems, architecture design. It increases cost but dramatically improves accuracy on hard tasks.
+</div>
+</div>
+
+<!-- Quiz 1 -->
+<div class="quiz-section">
+<h3>🧠 Quiz: Claude API</h3>
+<div class="quiz-q" id="q1">
+<p>1. When Claude responds with <code class="inline">stop_reason = "tool_use"</code>, what should your code do next?</p>
+<button class="quiz-opt" onclick="checkQ('q1',0)">A. Stop the conversation — Claude is done</button>
+<button class="quiz-opt" onclick="checkQ('q1',1)">B. Execute the tool and send a tool_result message back to Claude</button>
+<button class="quiz-opt" onclick="checkQ('q1',2)">C. Retry the same request with different parameters</button>
+<button class="quiz-opt" onclick="checkQ('q1',3)">D. Switch to a different model</button>
+<div class="quiz-feedback feedback-correct" id="q1-fb-correct">✅ Correct! Tool use is a loop: Claude requests → you execute → you return result → Claude continues reasoning.</div>
+<div class="quiz-feedback feedback-wrong" id="q1-fb-wrong">❌ Wrong. tool_use means Claude wants to call a function. You must execute it and return a tool_result in a follow-up message.</div>
+</div>
+<div class="quiz-q" id="q2">
+<p>2. Prompt caching reduces costs by up to 90%. What does the cache_control header actually cache?</p>
+<button class="quiz-opt" onclick="checkQ('q2',0)">A. The entire conversation history</button>
+<button class="quiz-opt" onclick="checkQ('q2',1)">B. The computed prefill (KV cache) for the marked content blocks, reused across requests</button>
+<button class="quiz-opt" onclick="checkQ('q2',2)">C. The model's weights for faster inference</button>
+<button class="quiz-opt" onclick="checkQ('q2',3)">D. The output tokens to avoid regenerating them</button>
+<div class="quiz-feedback feedback-correct" id="q2-fb-correct">✅ Correct! Anthropic caches the key-value attention states for those content blocks server-side for 5 minutes, so prefill is skipped on cache hits.</div>
+<div class="quiz-feedback feedback-wrong" id="q2-fb-wrong">❌ Wrong. The cache stores the KV attention states for marked blocks. Cache reads cost 0.30/1M vs 3.00/1M for regular input (Sonnet).</div>
+</div>
+<div class="quiz-q" id="q3">
+<p>3. Which model should you use for a high-volume classification task that needs to run 10,000 times/hour cheaply?</p>
+<button class="quiz-opt" onclick="checkQ('q3',0)">A. claude-opus-4-7</button>
+<button class="quiz-opt" onclick="checkQ('q3',1)">B. claude-sonnet-4-6</button>
+<button class="quiz-opt" onclick="checkQ('q3',2)">C. claude-haiku-4-5-20251001</button>
+<button class="quiz-opt" onclick="checkQ('q3',3)">D. Always use Opus for best results</button>
+<div class="quiz-feedback feedback-correct" id="q3-fb-correct">✅ Correct! Haiku is fastest and cheapest — perfect for high-volume classification, routing, and extraction tasks where you don't need Opus-level reasoning.</div>
+<div class="quiz-feedback feedback-wrong" id="q3-fb-wrong">❌ Wrong. Haiku is the right choice for high-volume, low-complexity tasks. Opus is overkill and expensive for classification.</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ SECTION 2: OPENAI API -->
+<section id="openai-api">
+<h2>2. OpenAI API</h2>
+<p class="section-intro">OpenAI's API is the most widely adopted LLM API. Understanding its patterns — especially for function calling, embeddings, and structured outputs — is essential since most AI frameworks default to OpenAI compatibility.</p>
+
+<h3>Chat Completions API</h3>
+<div class="card">
+<pre><code class="language-python">from openai import OpenAI
+
+client = OpenAI(api_key="sk-...")
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a senior Python engineer."},
+        {"role": "user", "content": "Explain the GIL in 3 sentences"}
+    ],
+    max_tokens=512,
+    temperature=0.3,        # 0=deterministic, 1=creative
+    top_p=0.95,
+    frequency_penalty=0.0,
+    presence_penalty=0.0
+)
+
+text = response.choices[0].message.content
+print(text)
+print(f"Tokens: {response.usage.prompt_tokens} + {response.usage.completion_tokens}")</code></pre>
+</div>
+
+<h3>Function Calling / Tool Use</h3>
+<div class="card">
+<pre><code class="language-python">tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_database",
+            "description": "Search the product database",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "limit": {"type": "integer", "default": 10}
+                },
+                "required": ["query"]
+            }
+        }
+    }
+]
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Find all red sneakers"}],
+    tools=tools,
+    tool_choice="auto"   # "auto" | "none" | {"type":"function","function":{"name":"..."}}
+)
+
+msg = response.choices[0].message
+if msg.tool_calls:
+    for call in msg.tool_calls:
+        func_name = call.function.name      # "search_database"
+        args = json.loads(call.function.arguments)  # {"query": "red sneakers"}
+
+        result = my_search(args["query"])
+
+        messages.append(msg)  # append assistant message with tool_calls
+        messages.append({
+            "role": "tool",
+            "tool_call_id": call.id,
+            "content": json.dumps(result)
+        })
+
+    # Final response
+    final = client.chat.completions.create(model="gpt-4o", messages=messages)</code></pre>
+</div>
+
+<h3>Structured Outputs</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-blue">RELIABLE</span><strong>Guaranteed schema-conforming JSON output</strong></div>
+<pre><code class="language-python">from pydantic import BaseModel
+from typing import List
+
+class ReviewAnalysis(BaseModel):
+    sentiment: str          # "positive" | "negative" | "neutral"
+    score: float            # 0.0 to 1.0
+    key_issues: List[str]
+    recommendation: str
+
+response = client.beta.chat.completions.parse(
+    model="gpt-4o-2024-08-06",  # Must support structured outputs
+    messages=[
+        {"role": "user", "content": f"Analyze this review: {review_text}"}
+    ],
+    response_format=ReviewAnalysis
+)
+
+analysis = response.choices[0].message.parsed  # Type: ReviewAnalysis
+print(f"Sentiment: {analysis.sentiment}")       # Always valid!</code></pre>
+</div>
+
+<h3>Embeddings</h3>
+<div class="card">
+<pre><code class="language-python">response = client.embeddings.create(
+    model="text-embedding-3-small",   # 1536-dim, cheap
+    # model="text-embedding-3-large", # 3072-dim, better quality
+    input=["How do I return a product?", "What is your refund policy?"],
+    encoding_format="float"
+)
+
+embeddings = [item.embedding for item in response.data]
+# embeddings[0] → [0.0234, -0.0841, ..., 0.1203]  (1536 values)
+
+# Semantic similarity
+import numpy as np
+def cosine_sim(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+sim = cosine_sim(embeddings[0], embeddings[1])
+print(f"Similarity: {sim:.3f}")  # → 0.94 (very similar)</code></pre>
+</div>
+
+<h3>Claude vs OpenAI Comparison</h3>
+<table class="comparison-table">
+<tr><th>Feature</th><th>Claude (Anthropic)</th><th>GPT-4o (OpenAI)</th></tr>
+<tr><td>Context window</td><td>200K tokens</td><td>128K tokens</td></tr>
+<tr><td>Vision</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+<tr><td>Tool use</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+<tr><td>Streaming</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+<tr><td>Prompt caching</td><td>✅ Native (5min/1hr)</td><td>❌ No native caching</td></tr>
+<tr><td>Extended thinking</td><td>✅ Yes (Opus)</td><td>⚠️ o1/o3 reasoning models</td></tr>
+<tr><td>Structured output</td><td>✅ JSON mode</td><td>✅ Strict schema mode</td></tr>
+<tr><td>Embeddings</td><td>❌ (use third-party)</td><td>✅ text-embedding-3</td></tr>
+<tr><td>Fine-tuning</td><td>❌ (contact sales)</td><td>✅ Yes</td></tr>
+<tr><td>Safety focus</td><td>Constitutional AI (strong)</td><td>RLHF + moderation</td></tr>
+</table>
+
+<!-- Quiz 2 -->
+<div class="quiz-section">
+<h3>🧠 Quiz: OpenAI API</h3>
+<div class="quiz-q" id="q4">
+<p>4. What does <code class="inline">response_format=ReviewAnalysis</code> (structured outputs) guarantee?</p>
+<button class="quiz-opt" onclick="checkQ('q4',0)">A. Faster response times</button>
+<button class="quiz-opt" onclick="checkQ('q4',1)">B. The output will always conform to the Pydantic schema — no parsing errors</button>
+<button class="quiz-opt" onclick="checkQ('q4',2)">C. Cheaper token costs</button>
+<button class="quiz-opt" onclick="checkQ('q4',3)">D. Multi-modal input support</button>
+<div class="quiz-feedback feedback-correct" id="q4-fb-correct">✅ Correct! Structured outputs use constrained decoding to guarantee schema conformance. No more JSON parsing errors or missing fields.</div>
+<div class="quiz-feedback feedback-wrong" id="q4-fb-wrong">❌ Wrong. Structured outputs guarantee schema conformance via constrained decoding. The model literally cannot produce invalid JSON.</div>
+</div>
+<div class="quiz-q" id="q5">
+<p>5. You're building a semantic search. Which embedding model gives better quality for retrieval?</p>
+<button class="quiz-opt" onclick="checkQ('q5',0)">A. text-embedding-3-small (1536 dim)</button>
+<button class="quiz-opt" onclick="checkQ('q5',1)">B. text-embedding-3-large (3072 dim)</button>
+<button class="quiz-opt" onclick="checkQ('q5',2)">C. gpt-4o produces better embeddings</button>
+<button class="quiz-opt" onclick="checkQ('q5',3)">D. All embedding models produce identical quality</button>
+<div class="quiz-feedback feedback-correct" id="q5-fb-correct">✅ Correct! text-embedding-3-large (3072 dimensions) has higher MTEB benchmark scores. Use small for cost efficiency, large for best retrieval quality.</div>
+<div class="quiz-feedback feedback-wrong" id="q5-fb-wrong">❌ Wrong. text-embedding-3-large offers better quality with 3072 dimensions. It scores higher on the MTEB retrieval benchmark.</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ SECTION 3: LANGGRAPH ADVANCED -->
+<section id="langgraph">
+<h2>3. LangGraph — Advanced Patterns</h2>
+<p class="section-intro">LangGraph models AI workflows as directed graphs where nodes are functions and edges are transitions. State flows through nodes, enabling complex multi-step reasoning, branching, loops, and human-in-the-loop workflows.</p>
+
+<h3>Core Concepts</h3>
+<div class="flow-box">
+  <div class="flow-node blue">State (TypedDict)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node green">Node (fn)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node orange">Edge / Condition</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node purple">Next Node</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node green">END</div>
+</div>
+
+<h3>StateGraph — Full Pattern</h3>
+<div class="card">
+<pre><code class="language-python">from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import MemorySaver
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import HumanMessage, AIMessage
+from typing import TypedDict, Annotated, List
+import operator
+
+# 1. Define state
+class AgentState(TypedDict):
+    messages: Annotated[List, operator.add]  # Appends messages, doesn't overwrite
+    iteration: int
+    final_answer: str
+
+# 2. Define nodes (pure functions: state -> state update dict)
+llm = ChatAnthropic(model="claude-sonnet-4-6")
+
+def agent_node(state: AgentState) -> dict:
+    response = llm.invoke(state["messages"])
+    return {"messages": [response], "iteration": state["iteration"] + 1}
+
+def tool_node(state: AgentState) -> dict:
+    last_msg = state["messages"][-1]
+    # Execute tool calls from last message
+    results = execute_tools(last_msg.tool_calls)
+    return {"messages": results}
+
+def summarize_node(state: AgentState) -> dict:
+    summary = llm.invoke([HumanMessage(content="Summarize: " + str(state["messages"]))])
+    return {"final_answer": summary.content}
+
+# 3. Routing function
+def should_continue(state: AgentState) -> str:
+    last_message = state["messages"][-1]
+    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+        return "use_tools"
+    elif state["iteration"] >= 5:
+        return "summarize"
+    else:
+        return "end"
+
+# 4. Build graph
+workflow = StateGraph(AgentState)
+workflow.add_node("agent", agent_node)
+workflow.add_node("tools", tool_node)
+workflow.add_node("summarize", summarize_node)
+
+workflow.set_entry_point("agent")
+workflow.add_conditional_edges("agent", should_continue, {
+    "use_tools": "tools",
+    "summarize": "summarize",
+    "end": END
+})
+workflow.add_edge("tools", "agent")       # Loop back
+workflow.add_edge("summarize", END)
+
+# 5. Compile with checkpointing
+memory = MemorySaver()
+app = workflow.compile(checkpointer=memory)
+
+# 6. Run
+config = {"configurable": {"thread_id": "user-123"}}
+result = app.invoke(
+    {"messages": [HumanMessage(content="Research the latest AI news")], "iteration": 0},
+    config=config
+)
+print(result["messages"][-1].content)</code></pre>
+</div>
+
+<h3>Human-in-the-Loop with interrupt_before</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-orange">IMPORTANT</span><strong>Pause execution for human approval</strong></div>
+<pre><code class="language-python">from langgraph.types import interrupt, Command
+
+# Method 1: interrupt_before — pause BEFORE a node runs
+app = workflow.compile(
+    checkpointer=memory,
+    interrupt_before=["tools"]  # Pause before executing tools
+)
+
+# Start the run
+events = list(app.stream(initial_state, config))
+# Graph pauses at "tools" node — waiting for human approval
+
+# Human reviews the pending tool call...
+# Resume execution
+result = app.invoke(Command(resume="approved"), config=config)
+
+# Method 2: interrupt() inside a node
+def review_node(state: AgentState):
+    pending_action = state["messages"][-1].tool_calls[0]
+
+    # This PAUSES the graph and surfaces value to the user
+    approval = interrupt({
+        "action": pending_action,
+        "message": "Do you approve this action?"
+    })
+
+    if approval == "yes":
+        return {"approved": True}
+    else:
+        return {"approved": False, "messages": [HumanMessage("Action cancelled")]}</code></pre>
+</div>
+
+<h3>Multi-Agent Subgraphs</h3>
+<div class="card">
+<pre><code class="language-python"># Build a specialized sub-agent
+researcher_graph = StateGraph(AgentState)
+researcher_graph.add_node("search", search_node)
+researcher_graph.add_node("analyze", analyze_node)
+# ... build the graph ...
+researcher = researcher_graph.compile()
+
+# Use it as a node in the parent graph
+def researcher_node(state: AgentState) -> dict:
+    result = researcher.invoke({"messages": state["messages"]})
+    return {"messages": result["messages"]}
+
+# Parent orchestrator
+main_graph = StateGraph(AgentState)
+main_graph.add_node("researcher", researcher_node)
+main_graph.add_node("writer", writer_node)
+main_graph.add_node("reviewer", reviewer_node)
+# ... edges and logic ...</code></pre>
+</div>
+
+<div class="quiz-section">
+<h3>🧠 Quiz: LangGraph</h3>
+<div class="quiz-q" id="q6">
+<p>6. Why is <code class="inline">Annotated[List, operator.add]</code> used for the messages field in LangGraph state?</p>
+<button class="quiz-opt" onclick="checkQ('q6',0)">A. It makes the list type-safe</button>
+<button class="quiz-opt" onclick="checkQ('q6',1)">B. It tells LangGraph to append new messages instead of replacing the whole list</button>
+<button class="quiz-opt" onclick="checkQ('q6',2)">C. It enables async processing of messages</button>
+<button class="quiz-opt" onclick="checkQ('q6',3)">D. It is required for type checking tools</button>
+<div class="quiz-feedback feedback-correct" id="q6-fb-correct">✅ Correct! The Annotated reducer tells LangGraph how to merge state updates. operator.add appends lists, so each node can return new messages without losing previous ones.</div>
+<div class="quiz-feedback feedback-wrong" id="q6-fb-wrong">❌ Wrong. Without a reducer, node returns REPLACE state. With operator.add reducer, returns are APPENDED — critical for conversation history.</div>
+</div>
+<div class="quiz-q" id="q7">
+<p>7. What is the primary purpose of <code class="inline">MemorySaver</code> in LangGraph?</p>
+<button class="quiz-opt" onclick="checkQ('q7',0)">A. It stores LLM API keys securely</button>
+<button class="quiz-opt" onclick="checkQ('q7',1)">B. It persists graph state between invocations, enabling multi-turn conversations and resumable workflows</button>
+<button class="quiz-opt" onclick="checkQ('q7',2)">C. It caches LLM responses to save API costs</button>
+<button class="quiz-opt" onclick="checkQ('q7',3)">D. It compresses large message histories</button>
+<div class="quiz-feedback feedback-correct" id="q7-fb-correct">✅ Correct! MemorySaver is a checkpointer — it saves graph state snapshots by thread_id. This enables: multi-turn conversations, human-in-the-loop pausing, and workflow resumption after failures.</div>
+<div class="quiz-feedback feedback-wrong" id="q7-fb-wrong">❌ Wrong. MemorySaver is a checkpointer that persists state snapshots. Use thread_id in config to resume specific conversations.</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ SECTION 4: SEMANTIC KERNEL -->
+<section id="semantic-kernel">
+<h2>4. Semantic Kernel (Microsoft)</h2>
+<p class="section-intro">Semantic Kernel is Microsoft's open-source SDK for integrating LLMs into applications. It's the backbone of Microsoft Copilot products. Key concepts: Kernel (orchestrator), Plugins (function collections), Planner (auto-selects plugins), and Memory (vector stores).</p>
+
+<h3>Core Architecture</h3>
+<div class="flow-box">
+  <div class="flow-node blue">Kernel</div>
+  <div class="flow-arrow">has</div>
+  <div class="flow-node green">AI Services (GPT, Claude)</div>
+  <div class="flow-arrow">+</div>
+  <div class="flow-node orange">Plugins</div>
+  <div class="flow-arrow">+</div>
+  <div class="flow-node purple">Memory</div>
+</div>
+
+<h3>Basic Setup &amp; Plugins</h3>
+<div class="card">
+<pre><code class="language-python">import semantic_kernel as sk
+from semantic_kernel.connectors.ai.open_ai import OpenAIChatCompletion, OpenAITextEmbedding
+from semantic_kernel.core_plugins import TextPlugin, TimePlugin
+import asyncio
+
+async def main():
+    # 1. Create kernel
+    kernel = sk.Kernel()
+
+    # 2. Add AI service
+    kernel.add_service(OpenAIChatCompletion(
+        service_id="gpt4",
+        ai_model_id="gpt-4o",
+        api_key="sk-..."
+    ))
+
+    # 3. Add built-in plugins
+    kernel.add_plugin(TextPlugin(), "TextPlugin")
+    kernel.add_plugin(TimePlugin(), "TimePlugin")
+
+    # 4. Create a prompt function (semantic function)
+    summarize = kernel.add_function(
+        prompt="Summarize this in 3 bullets: {{$input}}",
+        function_name="Summarize",
+        plugin_name="SummaryPlugin"
+    )
+
+    result = await kernel.invoke(summarize, input="Long article text here...")
+    print(result)
+
+asyncio.run(main())</code></pre>
+</div>
+
+<h3>Native Functions (Custom Plugins)</h3>
+<div class="card">
+<pre><code class="language-python">from semantic_kernel.functions import kernel_function
+from semantic_kernel.connectors.ai.open_ai import OpenAIChatPromptExecutionSettings
+
+class DatabasePlugin:
+    """Custom plugin to query a database"""
+
+    @kernel_function(
+        name="search_products",
+        description="Search the product catalog by keyword"
+    )
+    def search_products(self, query: str) -> str:
+        """Returns JSON list of matching products"""
+        results = db.search(query)
+        return json.dumps(results)
+
+    @kernel_function(
+        name="get_inventory",
+        description="Check inventory level for a product ID"
+    )
+    def get_inventory(self, product_id: str) -> str:
+        count = db.get_inventory(product_id)
+        return f"Product {product_id} has {count} units in stock"
+
+# Register the plugin
+kernel.add_plugin(DatabasePlugin(), "DatabasePlugin")
+
+# Auto function-calling
+settings = OpenAIChatPromptExecutionSettings(
+    function_choice_behavior="auto"  # Let SK pick tools automatically
+)
+chat = kernel.get_service("gpt4")
+result = await chat.get_chat_message_content(
+    chat_history=history,
+    settings=settings,
+    kernel=kernel  # Pass kernel so it can invoke plugins
+)</code></pre>
+</div>
+
+<h3>Semantic Memory</h3>
+<div class="card">
+<pre><code class="language-python">from semantic_kernel.memory import SemanticTextMemory
+from semantic_kernel.connectors.memory.chroma import ChromaMemoryStore
+
+# Set up vector memory
+memory = SemanticTextMemory(
+    storage=ChromaMemoryStore(persist_directory="./chroma_db"),
+    embeddings_generator=OpenAITextEmbedding(ai_model_id="text-embedding-3-small", api_key="sk-...")
+)
+
+# Save facts to memory
+await memory.save_information("docs", id="api-guide", text="FastAPI uses Pydantic for validation...")
+await memory.save_information("docs", id="langchain", text="LangGraph is a graph-based agent framework...")
+
+# Search memory
+results = await memory.search("docs", query="How does FastAPI validation work?", limit=3)
+for r in results:
+    print(f"[{r.relevance:.2f}] {r.text}")</code></pre>
+</div>
+
+<div class="quiz-section">
+<h3>🧠 Quiz: Semantic Kernel</h3>
+<div class="quiz-q" id="q8">
+<p>8. In Semantic Kernel, what is the difference between a "semantic function" and a "native function"?</p>
+<button class="quiz-opt" onclick="checkQ('q8',0)">A. Semantic functions are faster than native functions</button>
+<button class="quiz-opt" onclick="checkQ('q8',1)">B. Semantic functions are LLM prompts; native functions are Python code decorated with @kernel_function</button>
+<button class="quiz-opt" onclick="checkQ('q8',2)">C. Native functions require API keys; semantic functions do not</button>
+<button class="quiz-opt" onclick="checkQ('q8',3)">D. There is no difference — the terms are interchangeable</button>
+<div class="quiz-feedback feedback-correct" id="q8-fb-correct">✅ Correct! Semantic functions = prompt templates executed by an LLM. Native functions = regular Python code. Both are "plugins" from SK's perspective and can be composed together.</div>
+<div class="quiz-feedback feedback-wrong" id="q8-fb-wrong">❌ Wrong. Semantic functions are LLM-based (prompt templates), while native functions are Python code. SK can combine both in the same workflow.</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ SECTION 5: MCP -->
+<section id="mcp">
+<h2>5. Model Context Protocol (MCP)</h2>
+<p class="section-intro">MCP is an open standard (by Anthropic) that defines how AI assistants connect to external data sources and tools. It's like USB-C for AI — a universal plug that lets any AI client connect to any MCP server. This eliminates the need to custom-build integrations for every tool.</p>
+
+<h3>Architecture</h3>
+<div class="card">
+<div class="card-header"><span class="badge badge-purple">ARCHITECTURE</span></div>
+<div class="flow-box" style="justify-content:center">
+  <div class="flow-node blue">Host (Claude Desktop / AI App)</div>
+  <div class="flow-arrow">↔</div>
+  <div class="flow-node green">MCP Client</div>
+  <div class="flow-arrow">↔</div>
+  <div class="flow-node orange">MCP Server</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node purple">Data Source / API</div>
+</div>
+<p style="margin-top:12px"><strong>Host</strong>: The AI application (Claude Desktop, VS Code Copilot, your custom app)<br>
+<strong>MCP Client</strong>: Protocol client embedded in the host, speaks MCP<br>
+<strong>MCP Server</strong>: Lightweight server you build that exposes tools/resources<br>
+<strong>Transport</strong>: stdio (local), HTTP+SSE (remote)</p>
+</div>
+
+<h3>Three MCP Primitives</h3>
+<div class="card">
+<table class="comparison-table">
+<tr><th>Primitive</th><th>What it is</th><th>Example</th></tr>
+<tr><td><strong>Tools</strong></td><td>Functions the AI can call (model-controlled)</td><td>search_db(), create_ticket(), get_weather()</td></tr>
+<tr><td><strong>Resources</strong></td><td>Data the AI can read (app-controlled)</td><td>file://readme.md, db://users/123, git://repo/main</td></tr>
+<tr><td><strong>Prompts</strong></td><td>Reusable prompt templates</td><td>/code-review, /summarize-pr, /explain-error</td></tr>
+</table>
+</div>
+
+<h3>Building an MCP Server (Python)</h3>
+<div class="card">
+<pre><code class="language-python">from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp import types
+import asyncio
+
+# Create the MCP server
+server = Server("my-database-server")
+
+# Declare tools
+@server.list_tools()
+async def list_tools() -> list[types.Tool]:
+    return [
+        types.Tool(
+            name="search_products",
+            description="Search the product catalog",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                    "limit": {"type": "integer", "description": "Max results", "default": 10}
+                },
+                "required": ["query"]
+            }
+        ),
+        types.Tool(
+            name="get_order",
+            description="Get order details by order ID",
+            inputSchema={
+                "type": "object",
+                "properties": {"order_id": {"type": "string"}},
+                "required": ["order_id"]
+            }
+        )
+    ]
+
+# Handle tool calls
+@server.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
+    if name == "search_products":
+        results = await db.search(arguments["query"], limit=arguments.get("limit", 10))
+        return [types.TextContent(type="text", text=json.dumps(results))]
+
+    elif name == "get_order":
+        order = await db.get_order(arguments["order_id"])
+        return [types.TextContent(type="text", text=json.dumps(order))]
+
+    else:
+        raise ValueError(f"Unknown tool: {name}")
+
+# Expose resources
+@server.list_resources()
+async def list_resources() -> list[types.Resource]:
+    return [
+        types.Resource(
+            uri="db://schema",
+            name="Database Schema",
+            description="Full database schema documentation",
+            mimeType="text/plain"
+        )
+    ]
+
+@server.read_resource()
+async def read_resource(uri: str) -> str:
+    if uri == "db://schema":
+        return open("schema.sql").read()
+    raise ValueError(f"Unknown resource: {uri}")
+
+# Run the server
+async def main():
+    async with stdio_server() as streams:
+        await server.run(*streams, server.create_initialization_options())
+
+asyncio.run(main())</code></pre>
+</div>
+
+<h3>Registering with Claude Desktop</h3>
+<div class="card">
+<pre><code class="language-json">// ~/Library/Application Support/Claude/claude_desktop_config.json
+{
+  "mcpServers": {
+    "my-database": {
+      "command": "python",
+      "args": ["/path/to/my_mcp_server.py"],
+      "env": {
+        "DATABASE_URL": "postgresql://..."
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"]
+    }
+  }
+}</code></pre>
+<div class="callout callout-tip">
+<strong>💡 How it works</strong>
+Claude Desktop launches your server as a subprocess via stdio. The MCP client in Claude Desktop handles the protocol negotiation. Claude then sees your tools and resources as native capabilities.
+</div>
+</div>
+
+<h3>FastMCP — Higher-Level SDK</h3>
+<div class="card">
+<pre><code class="language-python">from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("Analytics Server")
+
+@mcp.tool()
+async def run_sql_query(query: str) -> str:
+    """Execute a read-only SQL query on the analytics database"""
+    results = await db.execute(query)
+    return json.dumps(results, default=str)
+
+@mcp.resource("analytics://reports/{report_id}")
+async def get_report(report_id: str) -> str:
+    """Get a specific analytics report by ID"""
+    report = await db.get_report(report_id)
+    return json.dumps(report)
+
+@mcp.prompt()
+def analyze_metrics(timeframe: str = "7d") -> str:
+    return f"Analyze our key metrics for the past {timeframe}. Focus on user engagement, conversion rates, and revenue trends."
+
+# Run: python server.py
+if __name__ == "__main__":
+    mcp.run()</code></pre>
+</div>
+
+<div class="quiz-section">
+<h3>🧠 Quiz: Model Context Protocol</h3>
+<div class="quiz-q" id="q9">
+<p>9. What is the key architectural difference between MCP "Tools" and MCP "Resources"?</p>
+<button class="quiz-opt" onclick="checkQ('q9',0)">A. Tools are more expensive to call than resources</button>
+<button class="quiz-opt" onclick="checkQ('q9',1)">B. Tools are model-controlled (AI decides when to call); Resources are app-controlled (host decides what to expose)</button>
+<button class="quiz-opt" onclick="checkQ('q9',2)">C. Resources support real-time streaming; tools do not</button>
+<button class="quiz-opt" onclick="checkQ('q9',3)">D. Tools use HTTP transport; resources use stdio</button>
+<div class="quiz-feedback feedback-correct" id="q9-fb-correct">✅ Correct! Tools are invoked by the AI model's decision. Resources are data exposed by the application that the host chooses to inject into context. Different control flow!</div>
+<div class="quiz-feedback feedback-wrong" id="q9-fb-wrong">❌ Wrong. The distinction is control: Tools = AI decides to call them. Resources = App exposes them as readable data. Prompts = Reusable templates.</div>
+</div>
+<div class="quiz-q" id="q10">
+<p>10. Why was MCP created? What problem does it solve?</p>
+<button class="quiz-opt" onclick="checkQ('q10',0)">A. To make LLMs faster by caching tool results</button>
+<button class="quiz-opt" onclick="checkQ('q10',1)">B. To replace LangChain agents with a simpler alternative</button>
+<button class="quiz-opt" onclick="checkQ('q10',2)">C. To create a universal standard for AI-to-tool integration, eliminating N×M custom integrations</button>
+<button class="quiz-opt" onclick="checkQ('q10',3)">D. To compete with OpenAI's Assistants API</button>
+<div class="quiz-feedback feedback-correct" id="q10-fb-correct">✅ Correct! Without MCP, every AI app needs custom integrations with every tool (N×M problem). MCP creates a universal protocol so any AI client can talk to any MCP server (N+M instead).</div>
+<div class="quiz-feedback feedback-wrong" id="q10-fb-wrong">❌ Wrong. MCP solves the N×M integration problem. Instead of every AI app building custom connectors for every tool, one standard protocol connects all clients to all servers.</div>
+</div>
+</div>
+</section>
+
+<!-- Final Quiz Score -->
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;margin:32px 0;text-align:center">
+  <h3 style="color:var(--purple);margin-bottom:8px">🏆 Part 4 Score</h3>
+  <div id="final-score" style="font-size:32px;font-weight:700;color:var(--blue)">—</div>
+  <p style="color:var(--t2);margin-top:4px">Answer all questions above to see your score</p>
+  <button onclick="calcScore()" style="margin-top:12px;padding:10px 24px;background:var(--purple);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px">Calculate Score</button>
+</div>
+
+<!-- Navigation Footer -->
+<div style="display:flex;justify-content:space-between;margin-top:48px;padding-top:24px;border-top:1px solid var(--border)">
+  <a href="part3.html" style="color:var(--t2)">← Part 3: pgvector, RAG &amp; Docker</a>
+  <a href="part5.html" style="color:var(--blue)">Part 5: Production ML &amp; System Design →</a>
+</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script>
+const answers = {q1:1,q2:1,q3:2,q4:1,q5:1,q6:1,q7:1,q8:1,q9:1,q10:2};
+const answered = {};
+function checkQ(qid, chosen) {
+  if (answered[qid]) return;
+  answered[qid] = chosen;
+  const correct = answers[qid];
+  const opts = document.querySelectorAll(`#${qid} .quiz-opt`);
+  opts.forEach(o => o.disabled = true);
+  opts[chosen].classList.add(chosen === correct ? 'correct' : 'wrong');
+  if (chosen !== correct) opts[correct].classList.add('correct');
+  const fbC = document.getElementById(`${qid}-fb-correct`);
+  const fbW = document.getElementById(`${qid}-fb-wrong`);
+  if (chosen === correct) { fbC.style.display='block'; }
+  else { fbW.style.display='block'; }
+}
+function calcScore() {
+  const total = Object.keys(answers).length;
+  const correct = Object.entries(answered).filter(([k,v]) => v === answers[k]).length;
+  const pct = Math.round((correct/total)*100);
+  document.getElementById('final-score').textContent = `${correct}/${total} (${pct}%)`;
+  document.getElementById('final-score').style.color = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--orange)' : 'var(--red)';
+}
+</script>
+</body>
+</html>
