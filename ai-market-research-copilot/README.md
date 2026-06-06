@@ -1,156 +1,208 @@
-# 🔬 AI Market Research Copilot
+# AI Market Research Copilot
 
-A full-stack AI-powered market research tool. Upload documents or enter a market topic — get a professional, citation-backed report in minutes.
+![Python](https://img.shields.io/badge/python-3.11+-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-frontend-FF4B4B?logo=streamlit&logoColor=white)
+![FAISS](https://img.shields.io/badge/FAISS-vector--store-blue)
+![Gemini](https://img.shields.io/badge/Gemini-1.5--Flash-4285F4?logo=google&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-compose-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-yellow)
+
+> Upload a document or enter a market topic — get a professional, citation-grounded research report with competitor profiles, pricing intelligence, market trends, and SWOT analysis in minutes. Total operational cost: **$0/month**.
 
 ---
 
-## Features
+## The Problem
 
-| Feature | Details |
-|---|---|
-| 📁 File Upload | PDF, CSV, TXT, Markdown |
-| 🧩 Chunking & Embedding | sentence-transformers (local, free) |
-| 🔍 Vector Search | FAISS (local, no cloud needed) |
-| 🤖 RAG Pipeline | Retrieval-augmented generation |
-| 🏢 Competitors | Extract top-5 competitor profiles |
-| 💰 Pricing | Segment-level pricing intelligence |
-| 📈 Trends | Top-5 market trends with impact/timeframe |
-| ⚔️ SWOT | AI-generated SWOT analysis |
-| 📄 PDF Export | Professional branded PDF report |
-| 💬 Chat | Ask questions about uploaded documents |
+Market research agencies charge $5,000–$50,000 per report and take 2–4 weeks to deliver. Small and mid-size teams either skip it entirely or make product and positioning decisions on gut feel.
+
+---
+
+## Solution
+
+A full-stack RAG (Retrieval-Augmented Generation) pipeline that:
+1. Ingests your documents locally — no data leaves your machine for embedding
+2. Chunks, embeds, and indexes them in FAISS in seconds
+3. Retrieves relevant context per research section
+4. Generates structured intelligence via Gemini 1.5 Flash
+5. Exports a professional branded PDF report
+
+Every embedding runs on CPU via `sentence-transformers` — zero cloud cost for vector search.
+
+---
+
+## Architecture
+
+```
+Documents (PDF / CSV / TXT / Markdown)
+         │
+         ▼
+  FastAPI  POST /api/v1/upload/
+         │
+         ├─ Document Parser   extract raw text per file type
+         ├─ Chunker           800-token chunks, 100-token overlap
+         └─ Embedder          sentence-transformers/all-MiniLM-L6-v2
+                              (runs locally on CPU, no API key needed)
+                              │
+                              ▼
+                       FAISS Index (per session, persisted to disk)
+                              │
+            ┌─────────────────┴──────────────────┐
+            │          Research Engine            │
+            │   (FastAPI background task)         │
+            │                                     │
+            │  For each report section:           │
+            │  ┌──────────────────────────────┐   │
+            │  │  RAG Query                   │   │
+            │  │  1. Retrieve top-6 from FAISS│   │
+            │  │  2. Build context + prompt   │   │
+            │  │  3. Gemini 1.5 Flash → JSON  │   │
+            │  └──────────────────────────────┘   │
+            │                                     │
+            │  Sections (run concurrently):       │
+            │  • Top-5 competitor profiles        │
+            │  • Segment-level pricing            │
+            │  • Top-5 market trends              │
+            │  • SWOT analysis                    │
+            └──────────────┬──────────────────────┘
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+     PDF Report (ReportLab)    Streamlit Dashboard
+     branded, downloadable     Plotly charts, chat UI
+```
+
+---
+
+## Key Features
+
+| Feature | Detail |
+|---------|--------|
+| **Document ingestion** | PDF, CSV, TXT, Markdown — up to 50 MB |
+| **Local embeddings** | `sentence-transformers/all-MiniLM-L6-v2` — runs on CPU, no API key |
+| **Vector search** | FAISS in-process — no database to manage |
+| **RAG pipeline** | Per-section retrieval ensures grounded, citation-backed output |
+| **Competitor analysis** | Extracts top-5 competitor profiles from your documents |
+| **Pricing intelligence** | Segment-level pricing extracted from context |
+| **Market trends** | Top-5 trends with impact rating and timeframe |
+| **SWOT analysis** | AI-generated, grounded in uploaded documents |
+| **PDF export** | Branded professional report via ReportLab |
+| **Chat interface** | Follow-up questions against indexed documents |
+| **Fully offline** | Ollama support (Mistral, Llama 3) for zero cloud dependency |
+| **Docker ready** | `docker-compose up` — frontend + backend in one command |
+
+---
+
+## How It Works
+
+**Step 1 — Upload**
+User uploads a PDF, CSV, or text file through the Streamlit UI. FastAPI receives it at `POST /api/v1/upload/`.
+
+**Step 2 — Index**
+Background task: parse text → chunk (800 tokens, 100-token overlap) → embed via `sentence-transformers` (runs locally) → insert into session-scoped FAISS index. Index persisted to disk between requests.
+
+**Step 3 — Generate Report**
+User clicks "Generate Report". FastAPI spawns background tasks for each report section. Each section independently retrieves top-6 relevant chunks from FAISS, builds a structured prompt, calls Gemini 1.5 Flash, and parses the JSON response.
+
+**Step 4 — View and Export**
+Streamlit renders results with Plotly charts. User downloads a branded ReportLab PDF with all sections.
+
+**Step 5 — Chat**
+User asks follow-up questions. The chat pipeline retrieves relevant chunks from FAISS and returns citation-grounded answers.
+
+---
+
+## Results
+
+| Metric | Value |
+|--------|-------|
+| Average report generation | 45–90 seconds |
+| Embedding cost | $0 (local CPU inference) |
+| Vector search cost | $0 (in-process FAISS) |
+| LLM cost (Gemini free tier) | $0 (15 req/min, 1M tokens/day) |
+| Total operational cost | **$0/month** |
+| Max document size | 50 MB |
+| Embedding dimensions | 384 (all-MiniLM-L6-v2) |
 
 ---
 
 ## Tech Stack
 
-- **Frontend**: Streamlit (multi-page app, dark theme, Plotly charts)
-- **Backend**: FastAPI (async, background tasks, REST API)
-- **Vector DB**: FAISS (local, in-process)
-- **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2` (runs locally, free)
-- **LLM**: Google Gemini 1.5 Flash (free tier) with Ollama fallback
-- **Database**: SQLite + SQLAlchemy
-- **PDF**: ReportLab
-- **Deployment**: Render (free) / Streamlit Cloud / Docker
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Streamlit (multi-page, dark theme, Plotly charts) |
+| Backend | FastAPI (async, background tasks) |
+| Vector Store | FAISS (local, in-process, session-scoped) |
+| Embeddings | sentence-transformers/all-MiniLM-L6-v2 |
+| LLM | Gemini 1.5 Flash (free tier) + Ollama fallback |
+| Database | SQLite + SQLAlchemy (session and report metadata) |
+| PDF | ReportLab |
+| Deployment | Docker Compose / Render (free) / Streamlit Cloud |
 
 ---
 
-## Quick Start — Local
+## Setup
 
-### 1. Clone & setup
-
-```bash
-git clone https://github.com/yourname/ai-market-research-copilot
-cd ai-market-research-copilot
-```
-
-### 2. Configure environment
+### Quick Start (Local)
 
 ```bash
+git clone https://github.com/Sudharsan2816/Projects
+cd Projects/ai-market-research-copilot
+
 cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
-```
+# Add your GEMINI_API_KEY
+# Free key: https://aistudio.google.com/app/apikey
 
-Get a **free** Gemini API key at: https://aistudio.google.com/app/apikey
-
-### 3. Run the Backend
-
-```bash
+# Backend
 cd backend
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# Mac/Linux:
-source venv/bin/activate
-
 pip install -r requirements.txt
 uvicorn backend.main:app --reload --port 8000
-```
 
-Backend will be at: http://localhost:8000
-API docs at: http://localhost:8000/docs
-
-### 4. Run the Frontend (new terminal)
-
-```bash
-cd frontend
+# Frontend (new terminal)
+cd ../frontend
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Frontend will be at: http://localhost:8501
+- Frontend: http://localhost:8501
+- API docs: http://localhost:8000/docs
 
----
-
-## Docker Deployment
-
-### Prerequisites
-- Docker + Docker Compose installed
-- `.env` file configured with your API key
-
-### Run with Docker Compose
+### Docker (Recommended)
 
 ```bash
-# Build and start both services
+cd ai-market-research-copilot
+cp .env.example .env   # add GEMINI_API_KEY
 docker-compose up --build
-
-# Run in background
-docker-compose up -d --build
-
-# Stop
-docker-compose down
 ```
 
-- Frontend: http://localhost:8501
-- Backend: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-
----
-
-## Deployment — Render (Free)
-
-### Backend (FastAPI on Render)
-
-1. Push code to GitHub
-2. Go to https://render.com → New → Web Service
-3. Connect your repo
-4. Settings:
-   - **Root directory**: `.`
-   - **Build command**: `pip install -r backend/requirements.txt`
-   - **Start command**: `uvicorn backend.main:app --host 0.0.0.0 --port 10000`
-   - **Environment variables**: Add all vars from `.env`
-5. Deploy
-
-### Frontend (Streamlit Cloud — Free)
-
-1. Go to https://streamlit.io/cloud
-2. Connect GitHub repo
-3. Set **Main file path**: `frontend/app.py`
-4. Add secrets in Streamlit Cloud dashboard:
-   ```toml
-   BACKEND_URL = "https://your-render-backend.onrender.com"
-   ```
-5. Deploy
-
----
-
-## Using Ollama (Fully Offline / Free)
-
-If you don't want to use Gemini API:
+### Fully Offline with Ollama
 
 ```bash
-# Install Ollama
-# Windows/Mac: https://ollama.com/download
-# Linux:
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Pull a model
 ollama pull mistral
 
-# Update .env
+# Set in .env:
 LLM_PROVIDER=ollama
-OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=mistral
+EMBEDDING_PROVIDER=local
+
+docker-compose up --build
 ```
+
+---
+
+## API Reference
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/upload/` | Upload and index a document |
+| `GET` | `/api/v1/upload/{session_id}/documents` | List indexed documents |
+| `POST` | `/api/v1/research/generate` | Trigger report generation |
+| `GET` | `/api/v1/research/{session_id}/reports` | List reports |
+| `GET` | `/api/v1/research/{session_id}/reports/{id}` | Get report data |
+| `GET` | `/api/v1/report/{id}/download` | Download PDF |
+| `POST` | `/api/v1/chat/` | Chat with indexed documents |
+| `GET` | `/api/v1/chat/{session_id}/history` | Chat history |
+| `GET` | `/health` | Health check |
 
 ---
 
@@ -160,82 +212,38 @@ OLLAMA_MODEL=mistral
 ai-market-research-copilot/
 ├── backend/
 │   ├── api/routes/
-│   │   ├── upload.py         # File upload & indexing
-│   │   ├── research.py       # Report generation (background)
-│   │   ├── chat.py           # RAG chat endpoint
-│   │   └── report.py         # PDF download
+│   │   ├── upload.py          file upload and FAISS indexing
+│   │   ├── research.py        report generation (background tasks)
+│   │   ├── chat.py            RAG chat endpoint
+│   │   └── report.py          PDF download
 │   ├── core/
-│   │   ├── config.py         # Pydantic settings + .env
-│   │   ├── database.py       # SQLite + SQLAlchemy
-│   │   └── logging.py        # Structured logger
-│   ├── models/
-│   │   ├── db_models.py      # ORM models
-│   │   └── schemas.py        # Pydantic schemas
+│   │   ├── config.py          Pydantic settings from .env
+│   │   └── database.py        SQLite + SQLAlchemy
 │   ├── services/
-│   │   ├── document_parser.py  # PDF/CSV/TXT parsing
-│   │   ├── chunker.py          # Text chunking with overlap
-│   │   ├── embedder.py         # sentence-transformers
-│   │   ├── vector_store.py     # FAISS index per session
-│   │   ├── llm.py              # Gemini + Ollama clients
-│   │   ├── rag.py              # RAG pipeline
-│   │   ├── research_engine.py  # All research sections
-│   │   ├── report_generator.py # ReportLab PDF builder
-│   │   └── chat_engine.py      # Chat with history
-│   ├── main.py
-│   └── requirements.txt
+│   │   ├── document_parser.py PDF / CSV / TXT extraction
+│   │   ├── chunker.py         fixed-size chunking with overlap
+│   │   ├── embedder.py        sentence-transformers wrapper
+│   │   ├── vector_store.py    FAISS index per session
+│   │   ├── llm.py             Gemini + Ollama clients
+│   │   ├── rag.py             retrieval pipeline
+│   │   ├── research_engine.py all report sections
+│   │   ├── report_generator.py ReportLab PDF builder
+│   │   └── chat_engine.py     chat with history
+│   └── main.py
 ├── frontend/
-│   ├── app.py                  # Dashboard (home)
+│   ├── app.py                 dashboard home
 │   ├── pages/
-│   │   ├── 1_Upload.py         # File upload UI
-│   │   ├── 2_Research.py       # Report generation UI
-│   │   ├── 3_Report.py         # Report viewer + charts
-│   │   └── 4_Chat.py           # Chat interface
-│   ├── components/
-│   │   ├── styles.py           # Global dark CSS
-│   │   ├── sidebar.py          # Navigation sidebar
-│   │   └── charts.py           # Plotly chart components
-│   └── requirements.txt
-├── data/
-│   ├── uploads/                # Uploaded files (per session)
-│   ├── indexes/                # FAISS indexes (per session)
-│   └── db/                     # SQLite database
-├── reports/                    # Generated PDF reports
+│   │   ├── 1_Upload.py        file upload UI
+│   │   ├── 2_Research.py      report trigger UI
+│   │   ├── 3_Report.py        report viewer + Plotly charts
+│   │   └── 4_Chat.py          chat interface
+│   └── components/
+│       ├── styles.py          global dark CSS
+│       ├── sidebar.py         navigation
+│       └── charts.py          Plotly chart helpers
 ├── .env.example
-├── .gitignore
 ├── docker-compose.yml
 ├── Dockerfile.backend
 ├── Dockerfile.frontend
 └── README.md
 ```
-
----
-
-## API Reference
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/upload/` | Upload & index a document |
-| `GET` | `/api/v1/upload/{session_id}/documents` | List indexed docs |
-| `POST` | `/api/v1/research/generate` | Trigger report generation |
-| `GET` | `/api/v1/research/{session_id}/reports` | List reports |
-| `GET` | `/api/v1/research/{session_id}/reports/{id}` | Get report data |
-| `GET` | `/api/v1/report/{id}/download` | Download PDF |
-| `POST` | `/api/v1/chat/` | Chat with docs |
-| `GET` | `/api/v1/chat/{session_id}/history` | Get chat history |
-| `GET` | `/health` | Backend health check |
-
-Interactive docs: http://localhost:8000/docs
-
----
-
-## Cost
-
-| Component | Cost |
-|---|---|
-| Gemini 1.5 Flash | Free (15 req/min, 1M tokens/day) |
-| sentence-transformers | Free (runs locally) |
-| FAISS | Free (runs locally) |
-| SQLite | Free |
-| Render free tier | Free (spins down after 15 min idle) |
-| Streamlit Cloud | Free |
-| **Total** | **$0/month** |
