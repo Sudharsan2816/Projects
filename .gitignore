@@ -1,0 +1,58 @@
+# Local tool settings
+.claude/
+.codex/
+.agents/
+
+# Local experiments and non-portfolio work kept outside this public repo
+Zamri/
+Portfolio/
+Portfolio Updated/
+.phase2-backup/
+ai-ml-learning-platform/
+aus-weather-rain-prediction/
+bear-house-merchandising-trainer/
+enterprise-rag/
+gh-pages-phase2/
+job-apply-bot/
+open-design/
+FinalProject_AUSWeather.ipynb
+({i
+[i
+
+# Secrets and environment
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+venv/
+env/
+.venv/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Generated runtime data
+data/
+reports/
+*.log
+
+# Local installers and large one-off artifacts
+*.exe
+*.zip
+*.ai
+*.eps
+ai-market-research-copilot/ui_template/
+ai-market-research-copilot/Marketscope_UI_design.html
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
