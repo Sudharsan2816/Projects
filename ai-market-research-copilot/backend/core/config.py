@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     # API Keys
     GEMINI_API_KEY: str = ""
-    NVIDIA_API_KEY: str = "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"
+    NVIDIA_API_KEY: str = ""
     NVIDIA_BASE_URL: str = "https://integrate.api.nvidia.com/v1"
 
     # NVIDIA models
