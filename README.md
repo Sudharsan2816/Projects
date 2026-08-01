@@ -7,7 +7,7 @@ Recruiter-facing summary:
 - Role signal: AI Engineer, Backend Engineer, Data/ML application developer.
 - Core strengths: Python, FastAPI, RAG, FAISS, sentence-transformers, LLM APIs, RBAC, test coverage, Docker, and security-minded backend work.
 - Security signal: explicit CORS origins, optional API-key auth, rate limiting, sanitized uploads, validated session IDs, local env encryption workflow, production JWT secret checks, ignored runtime artifacts, and JSON metadata storage instead of pickle.
-- Quality signal: 79 passing automated tests across RAG grounding, API security, background jobs, RBAC, retrieval, observability, temporal ML evaluation, and drift monitoring.
+- Quality signal: 80 passing automated tests across RAG grounding, API security, background jobs, RBAC, retrieval, observability, temporal ML evaluation, and drift monitoring.
 
 ## Projects
 
@@ -26,4 +26,4 @@ See [`PRIORITY_PROJECT_COMPLETION_REPORT.md`](PRIORITY_PROJECT_COMPLETION_REPORT
 
 Recommended flagship repository name: `ai-market-research-copilot`.
 
-Recommended description: `Full-stack RAG market research platform with FastAPI, FAISS, local embeddings, Gemini/Ollama/NVIDIA support, a React workspace, and Docker.`
+Recommended description: `Full-stack RAG market research platform with FastAPI, FAISS, local embeddings, NVIDIA NIM, a React workspace, and Docker.`

@@ -22,7 +22,7 @@ The system operates on the **RAG (Retrieval-Augmented Generation)** principle:
 5.  **Research Job:**
     - The system identifies key research areas: Competitors, Pricing, Trends, and SWOT.
     - For each area, it queries the Vector DB for relevant context.
-    - It sends retrieved context plus a specialized prompt through the configured NVIDIA, Gemini, and Ollama fallback chain.
+    - It sends retrieved context plus a specialized prompt to NVIDIA NIM. Optional fallbacks must be explicitly enabled.
     - The job persists its progress in SQLite and resumes polling after navigation or browser tab changes.
 6.  **Synthesis:** The LLM synthesizes the raw data into structured insights.
 7.  **Reporting:** Results are stored in a SQLite database and can be exported as a professional PDF.
@@ -36,7 +36,7 @@ The system operates on the **RAG (Retrieval-Augmented Generation)** principle:
 - `services/`: The core logic "brains" of the app.
     - `document_parser.py`: Extracts text from various formats.
     - `vector_store.py`: Manages the local FAISS index.
-    - `llm.py`: Interface for Gemini and Ollama.
+    - `llm.py`: NVIDIA NIM interface with optional Gemini and Ollama fallbacks.
     - `research_engine.py`: Orchestrates the multi-step research process.
 - `models/`: Database schemas (SQLAlchemy) and API data shapes (Pydantic).
 
@@ -83,5 +83,5 @@ Use the **Chat** page to ask follow-up questions like *"What are the specific pr
 
 ## 6. Technical Requirements
 - **Python 3.11+**
-- **LLM:** A working NVIDIA or Gemini key, or a local Ollama service and model.
+- **LLM:** A working NVIDIA API key. Gemini and Ollama are disabled unless explicitly added to `LLM_FALLBACK_PROVIDERS`.
 - **Local Resources:** The embedding model and vector store run locally, requiring ~2GB of RAM.

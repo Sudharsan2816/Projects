@@ -58,7 +58,7 @@ User
 
 ```bash
 cp .env.example .env
-# Add at least one provider key, or configure Ollama locally.
+# Set NVIDIA_API_KEY. NVIDIA is the only active provider by default.
 
 docker-compose up --build
 ```
@@ -107,11 +107,14 @@ pip install -r backend/requirements.txt
 python -m uvicorn backend.main:app --reload --port 8000
 ```
 
-Before a demo, verify every configured provider without printing keys or generated content:
+Before a demo, verify the active NVIDIA provider without printing the key or generated content:
 
 ```powershell
-python -m scripts.check_llm_providers
+python -m scripts.check_llm_providers --provider nvidia
 ```
+
+Fallbacks are disabled by default. To enable them later, set a comma-separated list such as
+`LLM_FALLBACK_PROVIDERS=gemini,ollama`.
 
 ## Recruiter Notes
 

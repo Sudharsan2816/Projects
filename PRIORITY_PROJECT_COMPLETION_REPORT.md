@@ -10,12 +10,12 @@ The AI Market Research Copilot, Enterprise RAG, AUS Weather Rain Prediction, and
 
 | Project | Completion evidence | Status |
 | --- | --- | --- |
-| AI Market Research Copilot | 43 tests, detached report jobs, provider diagnostics, unified React UI, security/evaluation/observability | Code ready; provider action required |
+| AI Market Research Copilot | 44 tests, detached report jobs, NVIDIA-only runtime, unified React UI, security/evaluation/observability | Ready locally |
 | Enterprise RAG | 29 tests, lint, 7/7 RBAC evaluation, idempotent seed workflow, observability | Ready locally |
 | AUS Weather Rain Prediction | 7 tests, chronological evaluation, 72.1% rain recall, drift monitoring, model card, Docker | Ready locally |
 | Portfolio Updated | Three verified projects, direct evidence links, real evaluation media, syntax and HTML checks | Ready locally |
 
-Total automated tests passing: **79**.
+Total automated tests passing: **80**.
 
 ## AI Market Research Copilot
 
@@ -28,17 +28,18 @@ Completed:
 - Added and retained security tests for authentication, rate limiting, path handling, upload safety, prompt grounding, and no-context refusal.
 - Replaced request-bound report generation with persisted server-owned workers, real progress stages, restart recovery, and queue limits. Browser tab changes no longer own or cancel report jobs.
 - Removed the duplicate Streamlit frontend and port 8501 service. FastAPI and the rebuilt Marketscope React workspace are now the single application on port 8000.
-- Added complete NVIDIA, Gemini, and Ollama fallback diagnostics, safe UI errors, retry behavior, and the documented `python -m scripts.check_llm_providers` health command.
+- Configured NVIDIA as the only active runtime provider. Gemini and Ollama remain available only through the explicit `LLM_FALLBACK_PROVIDERS` allowlist.
 - Fixed report download authorization/path traversal exposure, escaped PDF markup, removed secrets from Docker build context, added security headers and constant-time token comparison, and changed the container to a non-root user.
 
 Verified result:
 
-- 43 tests pass.
+- 44 tests pass.
 - Mean recall@3: 1.00 across 3 labeled cases.
 - Mean hit@3: 1.00.
 - Deterministic faithfulness: 1.00.
 - Citation precision and recall: 1.00.
-- Live provider check: NVIDIA key rejected, Gemini quota exhausted, and Ollama unavailable. No provider can currently generate production output until one external configuration is corrected.
+- Live NVIDIA check succeeds against `nvidia/llama-3.3-nemotron-super-49b-v1`.
+- End-to-end report 22 completed with a downloadable PDF and persisted progress through all generation stages.
 
 Evidence: [`ai-market-research-copilot/docs/RAG_EVALUATION.md`](ai-market-research-copilot/docs/RAG_EVALUATION.md), [`ai-market-research-copilot/docs/ARCHITECTURE.md`](ai-market-research-copilot/docs/ARCHITECTURE.md), and [`ai-market-research-copilot/docs/DEMO.md`](ai-market-research-copilot/docs/DEMO.md).
 
@@ -96,7 +97,7 @@ Completed:
 
 ## Final verification
 
-- `pytest`: 43 Market + 29 Enterprise + 7 Weather tests pass.
+- `pytest`: 44 Market + 29 Enterprise + 7 Weather tests pass.
 - `ruff`: all three codebases pass.
 - `mypy`: selected Market report/provider modules pass.
 - `bandit`: all three Python application codebases pass with no findings.
@@ -111,24 +112,11 @@ Completed:
 
 ## Remaining external actions
 
-1. GitHub publication is blocked because GitHub CLI is not installed. Run:
-
-   ```powershell
-   winget install --id GitHub.cli
-   gh auth login
-   ```
-
-   After authentication, the root and Portfolio changes can be committed on scoped branches, pushed, and opened as draft pull requests without including unrelated workspace files.
+1. Review and merge portfolio draft PR #1 after checking the recruiter-facing copy.
 
 2. A polished Market Copilot demo video is not captured because the in-app browser is unavailable in this session. The application is running locally and the exact safe capture sequence is documented in `ai-market-research-copilot/docs/DEMO.md`.
 
-3. At least one LLM provider must be restored before report generation can complete:
-
-   - Replace the rejected NVIDIA API key with a valid key.
-   - Restore Gemini quota/billing or use a key from a project with quota.
-   - Or install and run Ollama with the configured `mistral` model.
-
-4. Restart Codex before invoking the newly installed `ui-ux-pro-max` skill directly. Its design-system workflow has already been applied to the Marketscope UI in this working tree.
+3. Keep the working NVIDIA key in local or deployment secrets and rotate it immediately if it is ever exposed.
 
 ## Residual risks
 

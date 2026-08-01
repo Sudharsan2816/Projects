@@ -139,20 +139,25 @@ def _provider_is_configured(provider: str) -> bool:
 
 
 def configured_providers() -> list[str]:
-    """Return configured provider names without exposing credentials."""
-    return [name for name in ("nvidia", "gemini", "ollama") if _provider_is_configured(name)]
+    """Return active, configured provider names without exposing credentials."""
+    return _provider_order()
 
 
 def _provider_order(exclude: set[str] | None = None) -> list[str]:
     preferred = settings.LLM_PROVIDER.lower().strip()
     supported = ("nvidia", "gemini", "ollama")
-    order = [preferred, *supported] if preferred in supported else list(supported)
+    requested = [preferred, *settings.llm_fallback_providers]
     excluded = exclude or set()
-    return [
-        name
-        for index, name in enumerate(order)
-        if name not in order[:index] and name not in excluded and _provider_is_configured(name)
-    ]
+    order: list[str] = []
+    for name in requested:
+        if (
+            name in supported
+            and name not in order
+            and name not in excluded
+            and _provider_is_configured(name)
+        ):
+            order.append(name)
+    return order
 
 
 def _call_provider(provider: str, prompt: str, system: str) -> str:

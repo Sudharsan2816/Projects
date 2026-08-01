@@ -8,7 +8,7 @@ I build Python backend services, LLM-powered APIs, RAG workflows, vector search 
 
 ### AI Market Research Copilot
 
-Full-stack RAG market research platform using FastAPI, FAISS, sentence-transformers, NVIDIA NIM, Gemini/Ollama, SQLAlchemy, React, and Docker.
+Full-stack RAG market research platform using FastAPI, FAISS, sentence-transformers, NVIDIA NIM, SQLAlchemy, React, and Docker, with optional disabled-by-default provider fallbacks.
 
 What it demonstrates:
 
@@ -18,7 +18,7 @@ What it demonstrates:
 
 ## Verified Portfolio Projects
 
-- AI Market Research Copilot: 43 passing tests plus a committed retrieval evaluation with 1.00 recall@3, hit@3, deterministic faithfulness, and citation precision/recall across the labeled fixture set.
+- AI Market Research Copilot: 44 passing tests plus a committed retrieval evaluation with 1.00 recall@3, hit@3, deterministic faithfulness, and citation precision/recall across the labeled fixture set.
 - Enterprise RAG: 29 passing tests and 7/7 role-based authorization scenarios, including cross-role denial before retrieval.
 - AUS Weather Rain Prediction: chronological evaluation with 72.1% held-out rain recall, 55.4% precision, 76.8% balanced accuracy, and PSI drift monitoring.
 

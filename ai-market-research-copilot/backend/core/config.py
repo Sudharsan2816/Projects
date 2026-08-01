@@ -39,6 +39,7 @@ class Settings(BaseSettings):
 
     # LLM preference: "nvidia", "gemini", or "ollama"
     LLM_PROVIDER: str = "nvidia"
+    LLM_FALLBACK_PROVIDERS: str = ""
     LLM_REQUEST_TIMEOUT_SECONDS: float = 90.0
     REPORT_WORKER_COUNT: int = 2
     REPORT_MAX_ACTIVE_JOBS: int = 10
@@ -99,6 +100,14 @@ class Settings(BaseSettings):
             for path in self.RATE_LIMIT_EXEMPT_PATHS.split(",")
             if path.strip()
         }
+
+    @property
+    def llm_fallback_providers(self) -> list[str]:
+        return [
+            provider.strip().lower()
+            for provider in self.LLM_FALLBACK_PROVIDERS.split(",")
+            if provider.strip()
+        ]
 
     def ensure_dirs(self):
         for d in [

@@ -6,6 +6,8 @@ def test_provider_keys_are_not_hardcoded_defaults():
 
     assert settings.NVIDIA_API_KEY == ""
     assert settings.GEMINI_API_KEY == ""
+    assert settings.LLM_PROVIDER == "nvidia"
+    assert settings.llm_fallback_providers == []
 
 
 def test_cors_defaults_are_not_wildcard_with_credentials():
