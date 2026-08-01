@@ -1,0 +1,17 @@
+fastapi==0.139.2
+uvicorn[standard]==0.34.0
+python-multipart==0.0.32
+pydantic-settings==2.7.1
+SQLAlchemy==2.0.36
+PyJWT[crypto]==2.13.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+pandas==2.2.3
+numpy==1.26.4
+PyMuPDF==1.25.1
+langchain-text-splitters==1.1.2
+sentence-transformers==5.6.0
+transformers==5.14.1
+faiss-cpu==1.9.0.post1
+openai==1.59.7
+httpx==0.28.1

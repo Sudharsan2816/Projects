@@ -1,0 +1,90 @@
+{
+  "generated_at": "2026-08-01T06:46:29.387213+00:00",
+  "dataset": "rag_eval_dataset.json",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "top_k": 3,
+  "retrieval_summary": {
+    "cases": 3,
+    "mean_recall_at_k": 1.0,
+    "mean_hit_at_k": 1.0
+  },
+  "answer_summary": {
+    "cases": 3,
+    "mean_faithfulness": 1.0,
+    "mean_citation_precision": 1.0,
+    "mean_citation_recall": 1.0
+  },
+  "cases": [
+    {
+      "id": "market-size",
+      "question": "What is the projected size and growth rate of the AI note-taking market?",
+      "retrieved_chunk_ids": [
+        "market_report.pdf::0",
+        "market_report.pdf::1",
+        "competitor_pricing.md::0"
+      ],
+      "retrieval": {
+        "k": 3,
+        "retrieved": 3,
+        "relevant": 1,
+        "matched": 1,
+        "recall_at_k": 1.0,
+        "hit_at_k": 1.0
+      },
+      "answer": {
+        "faithfulness": 1.0,
+        "citation_precision": 1.0,
+        "citation_recall": 1.0
+      }
+    },
+    {
+      "id": "competitor-pricing",
+      "question": "How do Otter and Fireflies price their paid plans?",
+      "retrieved_chunk_ids": [
+        "competitor_pricing.md::1",
+        "competitor_pricing.md::0",
+        "market_report.pdf::0"
+      ],
+      "retrieval": {
+        "k": 3,
+        "retrieved": 3,
+        "relevant": 2,
+        "matched": 2,
+        "recall_at_k": 1.0,
+        "hit_at_k": 1.0
+      },
+      "answer": {
+        "faithfulness": 1.0,
+        "citation_precision": 1.0,
+        "citation_recall": 1.0
+      }
+    },
+    {
+      "id": "buyer-criteria",
+      "question": "Which product capabilities matter most to buyers?",
+      "retrieved_chunk_ids": [
+        "market_report.pdf::1",
+        "buyer_interviews.txt::0",
+        "buyer_interviews.txt::1"
+      ],
+      "retrieval": {
+        "k": 3,
+        "retrieved": 3,
+        "relevant": 1,
+        "matched": 1,
+        "recall_at_k": 1.0,
+        "hit_at_k": 1.0
+      },
+      "answer": {
+        "faithfulness": 1.0,
+        "citation_precision": 1.0,
+        "citation_recall": 1.0
+      }
+    }
+  ],
+  "methodology": {
+    "retrieval": "Cosine similarity over the production local embedding model.",
+    "faithfulness": "Deterministic claim-token support heuristic over retrieved contexts.",
+    "citations": "Exact relevant chunk identity precision and recall."
+  }
+}

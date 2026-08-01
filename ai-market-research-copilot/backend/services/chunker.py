@@ -1,4 +1,5 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from backend.core.config import get_settings
 from backend.core.logging import get_logger
 

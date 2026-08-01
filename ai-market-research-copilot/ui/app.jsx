@@ -1,173 +1,160 @@
-/* Main app — real backend wiring */
+/* Main application state and server-owned report job polling. */
 
-const { useState, useEffect, useCallback } = React;
+const { useCallback, useEffect, useState } = React;
+
+const REPORT_STEPS = [
+  "Preparing sources",
+  "Executive summary",
+  "Competitor analysis",
+  "Pricing analysis",
+  "Trend analysis",
+  "SWOT analysis",
+  "Rendering PDF",
+];
 
 const App = () => {
-  const [sessionId]   = useState(() => API.getSessionId());
+  const [sessionId] = useState(() => API.getSessionId());
   const [route, setRoute] = useState("dashboard");
 
-  const [docs,    setDocs]    = useState([]);
+  const [docs, setDocs] = useState([]);
   const [reports, setReports] = useState([]);
-  const [report,  setReport]  = useState(null);  // normalised current report
+  const [report, setReport] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [health,  setHealth]  = useState(false);
+  const [health, setHealth] = useState(false);
+  const [topic, setTopic] = useState("");
+  const [activeReportId, setActiveReportId] = useState(null);
+  const [jobProgress, setJobProgress] = useState(0);
+  const [jobStage, setJobStage] = useState("");
+  const [generationError, setGenerationError] = useState("");
 
-  const [topic,       setTopic]       = useState("");
-  const [generating,  setGenerating]  = useState(false);
-  const [genProgress, setGenProgress] = useState(0);
-  const [genStep,     setGenStep]     = useState(0);
+  const mergeReport = useCallback((raw) => {
+    setReports((current) => {
+      const others = current.filter((item) => item.id !== raw.id);
+      return [raw, ...others];
+    });
+  }, []);
 
-  const steps = [
-    "Analysing topic & retrieving context",
-    "Extracting competitor intelligence",
-    "Mining pricing insights",
-    "Identifying market trends",
-    "Performing SWOT analysis",
-    "Rendering report",
-  ];
+  const selectReport = useCallback((raw) => {
+    setReport(API.normalizeReport(raw));
+    setTopic(raw.topic || "");
+    setRoute("report");
+  }, []);
 
-  // ── Initial load ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    API.checkHealth().then(h => setHealth(h || null));
-    API.listDocuments(sessionId).then(setDocs).catch(() => {});
-    API.listReports(sessionId).then(r => {
-      setReports(r);
-      if (r.length > 0 && r[0].status === 'done') {
-        setReport(API.normalizeReport(r[0]));
-        setTopic(r[0].topic || '');
-      }
-    }).catch(() => {});
-    API.getChatHistory(sessionId).then(hist => {
-      setMessages(hist.map(m => ({
-        role: m.role === 'assistant' ? 'ai' : m.role,
-        content: m.content,
-        sources: m.sources || [],
+    let cancelled = false;
+    const bootstrap = async () => {
+      const [healthData, documentData, reportData, history] = await Promise.all([
+        API.checkHealth(),
+        API.listDocuments(sessionId).catch(() => []),
+        API.listReports(sessionId).catch(() => []),
+        API.getChatHistory(sessionId).catch(() => []),
+      ]);
+      if (cancelled) return;
+      setHealth(healthData || null);
+      setDocs(documentData);
+      setReports(reportData);
+      setMessages(history.map((message) => ({
+        role: message.role === "assistant" ? "ai" : message.role,
+        content: message.content,
+        sources: message.sources || [],
       })));
-    }).catch(() => {});
+
+      const active = reportData.find((item) => ["pending", "generating"].includes(item.status));
+      if (active) {
+        setActiveReportId(active.id);
+        setTopic(active.topic || "");
+        setJobProgress(active.progress || 0);
+        setJobStage(active.current_stage || "Queued");
+      }
+      const latestDone = reportData.find((item) => item.status === "done");
+      if (latestDone) {
+        setReport(API.normalizeReport(latestDone));
+        if (!active) setTopic(latestDone.topic || "");
+      }
+    };
+    bootstrap();
+    return () => { cancelled = true; };
   }, [sessionId]);
 
-  // ── Reload docs helper ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!activeReportId) return undefined;
+    let cancelled = false;
+    let timer;
+
+    const poll = async () => {
+      try {
+        const raw = await API.getReport(sessionId, activeReportId);
+        if (cancelled) return;
+        mergeReport(raw);
+        setJobProgress(raw.progress || 0);
+        setJobStage(raw.current_stage || "Generating report");
+        if (raw.status === "done") {
+          setReport(API.normalizeReport(raw));
+          setTopic(raw.topic || "");
+          setActiveReportId(null);
+          setGenerationError("");
+          return;
+        }
+        if (raw.status === "failed") {
+          setGenerationError(raw.error_message || "Report generation failed.");
+          setActiveReportId(null);
+          return;
+        }
+      } catch (error) {
+        if (!cancelled) setJobStage("Reconnecting to report job");
+      }
+      if (!cancelled) timer = window.setTimeout(poll, 3000);
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") poll();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    poll();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [activeReportId, mergeReport, sessionId]);
+
   const refreshDocs = useCallback(() => {
     API.listDocuments(sessionId).then(setDocs).catch(() => {});
   }, [sessionId]);
 
-  // ── Generate report ───────────────────────────────────────────────────────────
   const onGenerate = useCallback(async () => {
-    if (!topic.trim() || generating) return;
-    setGenerating(true);
-    setGenProgress(0);
-    setGenStep(0);
-
-    let reportId;
+    if (!topic.trim() || activeReportId) return;
+    setGenerationError("");
+    setJobProgress(0);
+    setJobStage("Submitting report job");
     try {
-      const res = await API.generateReport(sessionId, topic);
-      reportId = res.data?.report_id;
-    } catch (e) {
-      alert('Failed to start report: ' + e.message);
-      setGenerating(false);
-      return;
+      const response = await API.generateReport(sessionId, topic.trim());
+      const reportId = response.data && response.data.report_id;
+      if (!reportId) throw new Error("Backend did not return a report id");
+      setActiveReportId(reportId);
+    } catch (error) {
+      setGenerationError(error.message || "Unable to start report generation");
     }
+  }, [activeReportId, sessionId, topic]);
 
-    // Animate steps while polling
-    const totalSteps = steps.length;
-    const stepDuration = 8000 / totalSteps;  // ~8 s visual animation
-    let s = 0;
-    const stepTimer = setInterval(() => {
-      s += 1;
-      setGenStep(s);
-      setGenProgress(Math.min(95, (s / totalSteps) * 100));
-      if (s >= totalSteps) clearInterval(stepTimer);
-    }, stepDuration);
+  const openLatestReport = useCallback(() => {
+    if (report) setRoute("report");
+  }, [report]);
 
-    // Poll the actual report
-    const poll = async () => {
-      while (true) {
-        await new Promise(r => setTimeout(r, 3000));
-        try {
-          const r = await API.getReport(sessionId, reportId);
-          if (r.status === 'done') {
-            clearInterval(stepTimer);
-            setGenProgress(100);
-            setGenStep(totalSteps);
-            setGenerating(false);
-            const norm = API.normalizeReport(r);
-            setReport(norm);
-            setReports(prev => {
-              const others = prev.filter(x => x.id !== r.id);
-              return [r, ...others];
-            });
-            setTimeout(() => setRoute("report"), 400);
-            return;
-          }
-          if (r.status === 'failed') {
-            clearInterval(stepTimer);
-            setGenerating(false);
-            alert('Report generation failed. Check backend logs.');
-            return;
-          }
-        } catch {}
-      }
-    };
-    poll();
-  }, [topic, generating, sessionId]);
-
-  const hasReport = report !== null || reports.some(r => r.status === 'done');
+  const generating = activeReportId !== null;
+  const hasReport = report !== null || reports.some((item) => item.status === "done");
+  const currentStep = Math.min(
+    REPORT_STEPS.length - 1,
+    Math.max(0, Math.floor((jobProgress / 100) * REPORT_STEPS.length)),
+  );
 
   const crumbsMap = {
-    dashboard: ["Marketscope", "Dashboard"],
-    upload:    ["Marketscope", "Workspace", "Upload"],
-    research:  ["Marketscope", "Workspace", "Research"],
-    report:    ["Marketscope", "Reports", topic.length > 40 ? topic.slice(0, 40) + "…" : (topic || "Report")],
-    chat:      ["Marketscope", "Workspace", "Chat"],
+    dashboard: ["Marketscope", "Overview"],
+    upload: ["Marketscope", "Sources"],
+    research: ["Marketscope", "Research"],
+    report: ["Marketscope", "Reports", topic || "Report"],
+    chat: ["Marketscope", "Ask"],
   };
-
-  // ── Theme ─────────────────────────────────────────────────────────────────────
-  const [tweaks, setTweak] = useTweaks({
-    "theme":       "dark",
-    "accent":      "lime",
-    "displayFont": "Instrument Serif",
-    "uiFont":      "Geist",
-  });
-
-  useEffect(() => {
-    document.body.dataset.theme = tweaks.theme;
-    const accents = {
-      lime:    "oklch(0.86 0.18 120)",
-      amber:   "oklch(0.82 0.16 75)",
-      coral:   "oklch(0.74 0.17 30)",
-      sky:     "oklch(0.78 0.14 230)",
-      magenta: "oklch(0.72 0.20 340)",
-      mint:    "oklch(0.84 0.14 165)",
-    };
-    const a = accents[tweaks.accent] || accents.lime;
-    document.body.style.setProperty("--accent", a);
-    document.body.style.setProperty("--accent-dim", a.replace(")", " / 0.18)"));
-    const fg = (tweaks.theme === "light" || ["amber","lime","mint"].includes(tweaks.accent))
-      ? "#0A0B14" : "#FFFFFF";
-    document.body.style.setProperty("--accent-fg", fg);
-    document.body.style.setProperty("--font-sans",  `'${tweaks.uiFont}', system-ui, sans-serif`);
-    document.body.style.setProperty("--font-serif", `'${tweaks.displayFont}', Georgia, serif`);
-    const fontMap = {
-      "Geist":             "Geist:wght@400;500;600;700",
-      "Inter":             "Inter:wght@400;500;600;700",
-      "IBM Plex Sans":     "IBM+Plex+Sans:wght@400;500;600;700",
-      "Manrope":           "Manrope:wght@400;500;600;700",
-      "Instrument Serif":  "Instrument+Serif:ital@0;1",
-      "Fraunces":          "Fraunces:ital,wght@0,400;1,400",
-      "EB Garamond":       "EB+Garamond:ital,wght@0,400;1,400",
-      "Playfair Display":  "Playfair+Display:ital@0;1",
-    };
-    [tweaks.uiFont, tweaks.displayFont].forEach(f => {
-      if (!fontMap[f]) return;
-      const id = `gf-${f.replace(/\s/g, "-")}`;
-      if (!document.getElementById(id)) {
-        const link = document.createElement("link");
-        link.id = id; link.rel = "stylesheet";
-        link.href = `https://fonts.googleapis.com/css2?family=${fontMap[f]}&display=swap`;
-        document.head.appendChild(link);
-      }
-    });
-  }, [tweaks]);
 
   return (
     <div className="app">
@@ -179,17 +166,27 @@ const App = () => {
         msgCount={messages.length || undefined}
         reports={reports}
         sessionId={sessionId}
+        health={health}
+        onSelectReport={selectReport}
       />
       <div className="main">
         <TopBar crumbs={crumbsMap[route]} health={health} />
-        <div className="scroll" data-screen-label={route}>
+        {generating && (
+          <div className="job-bar" role="status" aria-live="polite">
+            <span className="spinner" aria-hidden="true"></span>
+            <div className="job-copy">
+              <strong>{jobStage || "Generating report"}</strong>
+              <span>{jobProgress}% complete. You can use any workspace view while this runs.</span>
+            </div>
+            <div className="job-progress" aria-hidden="true">
+              <span style={{ width: `${jobProgress}%` }}></span>
+            </div>
+            <button className="btn btn-sm" onClick={() => setRoute("research")}>View job</button>
+          </div>
+        )}
+        <main className="scroll" data-screen-label={route}>
           {route === "dashboard" && (
-            <Dashboard
-              setRoute={setRoute}
-              docs={docs}
-              reports={reports}
-              health={health}
-            />
+            <Dashboard setRoute={setRoute} setTopic={setTopic} docs={docs} reports={reports} health={health} />
           )}
           {route === "upload" && (
             <PageUpload
@@ -206,9 +203,13 @@ const App = () => {
               setTopic={setTopic}
               onGenerate={onGenerate}
               generating={generating}
-              progress={genProgress}
-              currentStep={genStep}
-              steps={steps}
+              progress={jobProgress}
+              currentStep={currentStep}
+              currentStage={jobStage}
+              steps={REPORT_STEPS}
+              error={generationError}
+              reportReady={Boolean(report)}
+              onOpenReport={openLatestReport}
             />
           )}
           {route === "report" && (
@@ -217,6 +218,7 @@ const App = () => {
               reports={reports}
               sessionId={sessionId}
               setRoute={setRoute}
+              onSelectReport={selectReport}
             />
           )}
           {route === "chat" && (
@@ -227,39 +229,8 @@ const App = () => {
               docs={docs}
             />
           )}
-        </div>
+        </main>
       </div>
-
-      <TweaksPanel title="Tweaks">
-        <TweakSection title="Theme">
-          <TweakRadio label="Mode" value={tweaks.theme} onChange={v => setTweak("theme", v)} options={[
-            { value: "dark",  label: "Dark" },
-            { value: "light", label: "Light" },
-          ]} />
-          <TweakSelect label="Accent" value={tweaks.accent} onChange={v => setTweak("accent", v)} options={[
-            { value: "lime",    label: "Chartreuse (default)" },
-            { value: "amber",   label: "Amber" },
-            { value: "coral",   label: "Coral" },
-            { value: "sky",     label: "Sky" },
-            { value: "magenta", label: "Magenta" },
-            { value: "mint",    label: "Mint" },
-          ]} />
-        </TweakSection>
-        <TweakSection title="Typography">
-          <TweakSelect label="Display font" value={tweaks.displayFont} onChange={v => setTweak("displayFont", v)} options={[
-            { value: "Instrument Serif", label: "Instrument Serif" },
-            { value: "Fraunces",         label: "Fraunces" },
-            { value: "EB Garamond",      label: "EB Garamond" },
-            { value: "Playfair Display", label: "Playfair Display" },
-          ]} />
-          <TweakSelect label="UI font" value={tweaks.uiFont} onChange={v => setTweak("uiFont", v)} options={[
-            { value: "Geist",        label: "Geist" },
-            { value: "Inter",        label: "Inter" },
-            { value: "IBM Plex Sans",label: "IBM Plex Sans" },
-            { value: "Manrope",      label: "Manrope (legacy)" },
-          ]} />
-        </TweakSection>
-      </TweaksPanel>
     </div>
   );
 };

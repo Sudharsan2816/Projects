@@ -1,9 +1,8 @@
-import io
-import csv
+from pathlib import Path
+from typing import Any, Dict, List
+
 import fitz  # PyMuPDF
 import pandas as pd
-from pathlib import Path
-from typing import List, Dict, Any
 
 from backend.core.logging import get_logger
 

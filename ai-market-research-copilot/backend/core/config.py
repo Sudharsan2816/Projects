@@ -1,7 +1,7 @@
-from pydantic_settings import BaseSettings
-from pathlib import Path
 from functools import lru_cache
+from pathlib import Path
 
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -11,9 +11,20 @@ class Settings(BaseSettings):
     APP_NAME: str = "AI Market Research Copilot"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
+    CORS_ALLOWED_ORIGINS: str = "http://localhost:8000"
+    CORS_ALLOW_CREDENTIALS: bool = False
+    API_AUTH_TOKEN: str = ""
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS: int = 120
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+    RATE_LIMIT_EXEMPT_PATHS: str = "/health"
+    OBSERVABILITY_ENABLED: bool = True
+    LLM_INPUT_COST_PER_MILLION: float = 0.0
+    LLM_OUTPUT_COST_PER_MILLION: float = 0.0
 
     # API Keys
     GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.0-flash-lite"
     NVIDIA_API_KEY: str = ""
     NVIDIA_BASE_URL: str = "https://integrate.api.nvidia.com/v1"
 
@@ -28,6 +39,9 @@ class Settings(BaseSettings):
 
     # LLM preference: "nvidia", "gemini", or "ollama"
     LLM_PROVIDER: str = "nvidia"
+    LLM_REQUEST_TIMEOUT_SECONDS: float = 90.0
+    REPORT_WORKER_COUNT: int = 2
+    REPORT_MAX_ACTIVE_JOBS: int = 10
 
     # Embedding provider: "nvidia" or "local"
     EMBEDDING_PROVIDER: str = "nvidia"
@@ -48,6 +62,7 @@ class Settings(BaseSettings):
 
     # Embeddings
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    MODEL_CACHE_DIR: Path = BASE_DIR / "data" / "model_cache"
 
     # Chunking
     CHUNK_SIZE: int = 800
@@ -62,12 +77,37 @@ class Settings(BaseSettings):
     # Token usage limits
     LLM_MAX_OUTPUT_TOKENS: int = 4096
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    @property
+    def cors_origins(self) -> list[str]:
+        origins = [
+            origin.strip()
+            for origin in self.CORS_ALLOWED_ORIGINS.split(",")
+            if origin.strip()
+        ]
+        return origins or ["http://localhost:8000"]
+
+    @property
+    def cors_allow_credentials(self) -> bool:
+        return self.CORS_ALLOW_CREDENTIALS and "*" not in self.cors_origins
+
+    @property
+    def rate_limit_exempt_paths(self) -> set[str]:
+        return {
+            path.strip()
+            for path in self.RATE_LIMIT_EXEMPT_PATHS.split(",")
+            if path.strip()
+        }
 
     def ensure_dirs(self):
-        for d in [self.UPLOAD_DIR, self.INDEX_DIR, self.DB_DIR, self.REPORTS_DIR]:
+        for d in [
+            self.UPLOAD_DIR,
+            self.INDEX_DIR,
+            self.DB_DIR,
+            self.REPORTS_DIR,
+            self.MODEL_CACHE_DIR,
+        ]:
             d.mkdir(parents=True, exist_ok=True)
 
 

@@ -1,19 +1,20 @@
-import json
-from typing import List, Dict, Any, Tuple, Generator
+from time import perf_counter
+from typing import Any, Dict, Generator, List, Tuple
 
-from .rag import rag_query
-from .llm import generate, generate_stream, rerank
-from .vector_store import FAISSVectorStore
-from .embedder import embed_query
 from backend.core.config import get_settings
 from backend.core.logging import get_logger
+from backend.core.observability import record_retrieval_trace
+
+from .llm import generate_stream, rerank
+from .rag import rag_query
+from .vector_store import FAISSVectorStore
 
 logger = get_logger(__name__)
 settings = get_settings()
 
 SYSTEM = """You are an AI assistant specializing in market research analysis.
-Answer questions based on uploaded documents and your knowledge of market research.
-Be concise, precise, and cite sources when available."""
+Answer questions using uploaded document context only.
+Be concise, precise, and cite sources when available. If context is missing, say so."""
 
 
 def chat(
@@ -71,11 +72,20 @@ def chat_stream(
 
     # Retrieve + rerank sources before streaming
     store = FAISSVectorStore(session_id)
+    retrieval_started = perf_counter()
     results = store.search(full_query, top_k=settings.RERANKER_FETCH_K)
     sources = []
 
     if results:
+        candidate_count = len(results)
         results = rerank(full_query, results, top_k=settings.TOP_K_RESULTS)
+        record_retrieval_trace(
+            session_id=session_id,
+            query=full_query,
+            duration_ms=(perf_counter() - retrieval_started) * 1000,
+            candidate_count=candidate_count,
+            selected=results,
+        )
         from .rag import build_context
         context = build_context(results)
         prompt = f"""You are a senior market research analyst. Use ONLY the provided context to answer.
@@ -98,7 +108,20 @@ Provide a detailed, structured answer with specific data points where available.
             for chunk, score in results
         ]
     else:
-        prompt = f"Answer the following market research question:\n{full_query}"
+        record_retrieval_trace(
+            session_id=session_id,
+            query=full_query,
+            duration_ms=(perf_counter() - retrieval_started) * 1000,
+            candidate_count=0,
+            selected=[],
+        )
+        yield (
+            "No indexed document context was found for this question. "
+            "Upload relevant source documents or ask about content already indexed in this session.",
+            None,
+        )
+        yield None, sources
+        return
 
     for token in generate_stream(prompt, SYSTEM):
         yield token, None

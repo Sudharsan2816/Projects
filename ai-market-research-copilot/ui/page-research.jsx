@@ -1,103 +1,134 @@
-/* Page: Research (generate report) */
+/* Page: Research */
 
-const PageResearch = ({ topic, setTopic, onGenerate, generating, progress, currentStep, steps }) => {
+const PageResearch = ({
+  topic,
+  setTopic,
+  onGenerate,
+  generating,
+  progress,
+  currentStep,
+  currentStage,
+  steps,
+  error,
+  reportReady,
+  onOpenReport,
+}) => {
   const suggestions = [
-    "AI note-taking tools — Global SMB market, 2026",
-    "EV charging infrastructure — EU 2026",
-    "D2C skincare brands — India",
-    "Voice AI agents — Enterprise",
-    "Cloud security posture management",
+    "AI note-taking tools, global SMB market, 2026",
+    "EV charging infrastructure, EU, 2026",
+    "D2C skincare brands in India",
+    "Voice AI agents for enterprises",
   ];
 
   return (
-    <div className="fade-in">
-      <div className="mb-32">
-        <div className="eyebrow mb-8">Step 02 — Generate</div>
-        <h1 className="h-display" style={{ fontSize: 32 }}>
-          What market are we <span className="italic serif">decoding today?</span>
-        </h1>
-        <div className="muted mt-8" style={{ maxWidth: 620 }}>
-          Define a topic with geography and timeframe. We'll mine your indexed corpus for competitors,
-          pricing, trends, and a SWOT — every claim cited.
+    <div className="fade-in page-stack">
+      <header className="page-header">
+        <div>
+          <div className="eyebrow mb-8">Research workspace</div>
+          <h1>Generate market intelligence</h1>
+          <p className="muted page-lead">
+            Define the market, geography, audience, and timeframe. The report job runs on the server
+            and continues while you move through the workspace.
+          </p>
         </div>
-      </div>
+        {reportReady && !generating && (
+          <button type="button" className="btn" onClick={onOpenReport}>
+            <Icon name="chart" size={14} /> Open latest report
+          </button>
+        )}
+      </header>
 
-      <div className="card mb-24" style={{ padding: 28 }}>
-        <div className="eyebrow mb-12">Research Brief</div>
+      <section className="workspace-panel" aria-labelledby="research-brief-title">
+        <div className="panel-heading">
+          <div>
+            <div className="eyebrow">Research brief</div>
+            <h2 id="research-brief-title">What should the copilot investigate?</h2>
+          </div>
+          <span className="badge badge-info">AI generated</span>
+        </div>
+
+        <label className="field-label" htmlFor="market-topic">Market topic</label>
         <textarea
-          className="input"
-          style={{ fontSize: 18, fontWeight: 500, padding: 14, minHeight: 64, lineHeight: 1.4 }}
+          id="market-topic"
+          className="input research-input"
           value={topic}
-          onChange={e => setTopic(e.target.value)}
-          placeholder="e.g. AI note-taking tools — Global SMB market, 2026"
+          onChange={(event) => setTopic(event.target.value)}
+          placeholder="Example: AI note-taking tools for global SMB teams, 2026"
           disabled={generating}
+          maxLength={255}
         />
-        <div className="row gap-8 mt-16" style={{ flexWrap: "wrap" }}>
-          <span className="dim" style={{ fontSize: 11, marginRight: 8, alignSelf: "center" }}>SUGGESTED</span>
-          {suggestions.map(s => (
-            <span
-              key={s}
-              className={`chip ${topic === s ? "chip-active" : ""}`}
-              onClick={() => !generating && setTopic(s)}
+        <div className="field-meta">
+          <span>Include geography, customer segment, and timeframe for stronger output.</span>
+          <span className="mono tnum">{topic.length}/255</span>
+        </div>
+
+        <div className="suggestion-row" aria-label="Suggested market topics">
+          {suggestions.map((suggestion) => (
+            <button
+              type="button"
+              key={suggestion}
+              className={`chip ${topic === suggestion ? "chip-active" : ""}`}
+              onClick={() => setTopic(suggestion)}
+              disabled={generating}
             >
-              {s}
-            </span>
+              {suggestion}
+            </button>
           ))}
         </div>
 
-        <div className="row mt-24 gap-16" style={{ paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-          <div className="col gap-4">
-            <div className="dim" style={{ fontSize: 11 }}>Sections</div>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>Summary · Competitors · Pricing · Trends · SWOT</div>
-          </div>
-          <div style={{ width: 1, height: 28, background: "var(--border)" }}></div>
-          <div className="col gap-4">
-            <div className="dim" style={{ fontSize: 11 }}>ETA</div>
-            <div style={{ fontSize: 13, fontWeight: 500 }} className="mono tnum">~ 60–120 sec</div>
+        <div className="research-actions">
+          <div className="research-output-list">
+            <span>Executive summary</span>
+            <span>Competitors</span>
+            <span>Pricing</span>
+            <span>Trends</span>
+            <span>SWOT</span>
           </div>
           <button
+            type="button"
             className="btn btn-primary"
-            style={{ marginLeft: "auto", padding: "12px 22px" }}
             onClick={onGenerate}
-            disabled={generating || !topic.trim()}
+            disabled={generating || topic.trim().length < 3}
           >
             {generating
-              ? <><span className="spinner"></span> Generating</>
-              : <><Icon name="sparkle" size={14} /> Generate Report</>}
+              ? <><span className="spinner" aria-hidden="true"></span> Report running</>
+              : <><Icon name="sparkle" size={14} /> Generate report</>}
           </button>
         </div>
-      </div>
+      </section>
+
+      {error && (
+        <section className="alert alert-error" role="alert">
+          <Icon name="flag" size={18} />
+          <div className="grow">
+            <strong>Report generation failed</strong>
+            <p>{error}</p>
+          </div>
+          <button type="button" className="btn btn-sm" onClick={onGenerate}>Retry</button>
+        </section>
+      )}
 
       {generating && (
-        <div className="card fade-in" style={{ padding: 28 }}>
-          <div className="row mb-16" style={{ justifyContent: "space-between" }}>
-            <h2>Synthesising "{topic}"</h2>
-            <span className="dim mono tnum">{Math.round(progress)}%</span>
+        <section className="workspace-panel" aria-labelledby="job-title">
+          <div className="panel-heading">
+            <div>
+              <div className="eyebrow">Active job</div>
+              <h2 id="job-title">{currentStage || "Generating report"}</h2>
+            </div>
+            <span className="mono tnum job-percent">{progress}%</span>
           </div>
-          <div className="progress-track mb-24">
+          <div className="progress-track" aria-label={`Report generation ${progress}% complete`}>
             <div className="progress-fill" style={{ width: `${progress}%` }}></div>
           </div>
-          <div>
-            {steps.map((st, i) => (
-              <div key={i} className={`step-row ${i === currentStep ? "active" : ""} ${i < currentStep ? "done" : ""}`}>
-                <div className={`step-marker ${i === currentStep ? "active" : ""} ${i < currentStep ? "done" : ""}`}>
-                  {i < currentStep ? "✓" : (i + 1).toString().padStart(2, "0")}
-                </div>
-                <div className="step-label">{st}</div>
-                <div className="step-time">
-                  {i < currentStep
-                    ? `${(2 + i * 1.4).toFixed(1)}s`
-                    : i === currentStep
-                      ? <span className="spinner"></span>
-                      : "—"}
-                </div>
+          <div className="job-steps">
+            {steps.map((step, index) => (
+              <div key={step} className={`job-step ${index === currentStep ? "active" : ""} ${index < currentStep ? "done" : ""}`}>
+                <span className="job-step-marker">{index < currentStep ? "✓" : String(index + 1).padStart(2, "0")}</span>
+                <span>{step}</span>
               </div>
             ))}
           </div>
-          <div className="muted mt-16" style={{ fontSize: 12 }}>
-            Running AI analysis on your corpus and web sources. This typically takes 60–120 seconds.
-          </div>
-        </div>
+        </section>
       )}
     </div>
   );

@@ -92,6 +92,9 @@ function normalizeReport(r) {
     id: r.id,
     topic: r.topic || '',
     status: r.status || 'pending',
+    progress: r.progress || 0,
+    currentStage: r.current_stage || '',
+    errorMessage: r.error_message || '',
     executiveSummary: r.executive_summary || '',
     competitors,
     pricing,
@@ -99,7 +102,7 @@ function normalizeReport(r) {
     swot,
     citations: [],
     createdAt: r.created_at,
-    reportPath: r.report_path,
+    downloadReady: Boolean(r.download_ready),
   };
 }
 
@@ -173,6 +176,10 @@ async function listReports(sessionId) {
   return apiGet(`/api/v1/research/${sessionId}/reports`);
 }
 
+function reportDownloadUrl(sessionId, reportId) {
+  return `${window.API_BASE}/api/v1/report/${encodeURIComponent(sessionId)}/${reportId}/download`;
+}
+
 async function* chatStream(sessionId, message) {
   const res = await fetch(window.API_BASE + '/api/v1/chat/stream', {
     method: 'POST',
@@ -215,6 +222,7 @@ window.API = {
   generateReport,
   getReport,
   listReports,
+  reportDownloadUrl,
   chatStream,
   getChatHistory,
   clearChatHistory,

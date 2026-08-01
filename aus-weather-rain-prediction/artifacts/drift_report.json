@@ -1,0 +1,103 @@
+{
+  "rows": 1512,
+  "status": "warning",
+  "max_psi": 0.10335601475410343,
+  "drifted_features": [],
+  "warning_features": [
+    "WindSpeed3pm"
+  ],
+  "features": {
+    "MinTemp": {
+      "type": "numeric",
+      "psi": 0.023438877919642383
+    },
+    "MaxTemp": {
+      "type": "numeric",
+      "psi": 0.027593286319686376
+    },
+    "Rainfall": {
+      "type": "numeric",
+      "psi": 0.0012926817670970193
+    },
+    "Evaporation": {
+      "type": "numeric",
+      "psi": 0.030017466377386136
+    },
+    "Sunshine": {
+      "type": "numeric",
+      "psi": 0.015088727678533167
+    },
+    "WindGustSpeed": {
+      "type": "numeric",
+      "psi": 0.0554181483722124
+    },
+    "WindSpeed9am": {
+      "type": "numeric",
+      "psi": 0.097887145690884
+    },
+    "WindSpeed3pm": {
+      "type": "numeric",
+      "psi": 0.10335601475410343
+    },
+    "Humidity9am": {
+      "type": "numeric",
+      "psi": 0.0075507494555233645
+    },
+    "Humidity3pm": {
+      "type": "numeric",
+      "psi": 0.010837675520483052
+    },
+    "Pressure9am": {
+      "type": "numeric",
+      "psi": 0.014253278206170951
+    },
+    "Pressure3pm": {
+      "type": "numeric",
+      "psi": 0.010918821104774962
+    },
+    "Cloud9am": {
+      "type": "numeric",
+      "psi": 0.005928163545745275
+    },
+    "Cloud3pm": {
+      "type": "numeric",
+      "psi": 0.008465280220676627
+    },
+    "Temp9am": {
+      "type": "numeric",
+      "psi": 0.0386846546329095
+    },
+    "Temp3pm": {
+      "type": "numeric",
+      "psi": 0.019196394615894175
+    },
+    "Location": {
+      "type": "categorical",
+      "psi": 0.004109863138858602
+    },
+    "WindGustDir": {
+      "type": "categorical",
+      "psi": 0.04910289439950142
+    },
+    "WindDir9am": {
+      "type": "categorical",
+      "psi": 0.08233526243735828
+    },
+    "WindDir3pm": {
+      "type": "categorical",
+      "psi": 0.03307153537699584
+    },
+    "RainYesterday": {
+      "type": "categorical",
+      "psi": 0.0012290413296197349
+    },
+    "Season": {
+      "type": "categorical",
+      "psi": 0.05149566987659614
+    }
+  },
+  "thresholds": {
+    "warning": 0.1,
+    "drift": 0.2
+  }
+}

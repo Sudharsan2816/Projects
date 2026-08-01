@@ -1,6 +1,6 @@
 # Sudharsan V S
 
-Data Engineer building AI-powered systems and production-grade applications.
+Data Engineer building AI-powered backend systems and practical AI applications.
 
 I build Python backend services, LLM-powered APIs, RAG workflows, vector search systems, and practical full-stack applications. My current focus is turning AI prototypes into reliable systems with clean APIs, reproducible setup, tests, Docker, and clear architecture.
 
@@ -8,27 +8,27 @@ I build Python backend services, LLM-powered APIs, RAG workflows, vector search 
 
 ### AI Market Research Copilot
 
-Full-stack RAG market research platform using FastAPI, FAISS, sentence-transformers, NVIDIA NIM, Gemini/Ollama, SQLAlchemy, Streamlit/React, and Docker.
+Full-stack RAG market research platform using FastAPI, FAISS, sentence-transformers, NVIDIA NIM, Gemini/Ollama, SQLAlchemy, React, and Docker.
 
-### AI Code Review Agent
+What it demonstrates:
 
-GitHub PR review service using FastAPI, GitHub APIs, Anthropic/OpenAI, MongoDB, and LangGraph-compatible orchestration.
+- Document upload, parsing, chunking, embedding, vector retrieval, grounded chat, structured report generation, and PDF export.
+- Backend safety work: explicit CORS origins, optional API-key auth, rate limiting, sanitized uploads, validated session IDs, no LLM fallback when retrieval has no context, local env encryption workflow, and JSON vector metadata.
+- Engineering process: Docker Compose, pytest coverage, and GitHub Actions.
 
-### AI Lead Classifier API
+## Verified Portfolio Projects
 
-FastAPI service for lead qualification using Claude, structured outputs, prompt caching, and streaming responses.
-
-### Semantic Similarity Search API
-
-ML API with TF-IDF baseline, FastAPI endpoints, test coverage, and PostgreSQL/pgvector schema design.
+- AI Market Research Copilot: 43 passing tests plus a committed retrieval evaluation with 1.00 recall@3, hit@3, deterministic faithfulness, and citation precision/recall across the labeled fixture set.
+- Enterprise RAG: 29 passing tests and 7/7 role-based authorization scenarios, including cross-role denial before retrieval.
+- AUS Weather Rain Prediction: chronological evaluation with 72.1% held-out rain recall, 55.4% precision, 76.8% balanced accuracy, and PSI drift monitoring.
 
 ## Skills Shown In My Repositories
 
-Python, FastAPI, SQLAlchemy, SQLite, MongoDB, FAISS, sentence-transformers, RAG, LLM APIs, Anthropic Claude, OpenAI, Gemini, NVIDIA NIM, Docker, React, TypeScript, Vite, pytest, PostgreSQL, pgvector.
+Python, FastAPI, SQLAlchemy, SQLite, FAISS, sentence-transformers, scikit-learn, pandas, RAG, LLM APIs, Gemini, NVIDIA NIM, Docker, React, Streamlit, pytest, GitHub Actions, RBAC, JWT auth, model evaluation, and drift monitoring.
 
 ## Current Direction
 
-I am strengthening my portfolio around data engineering, AI engineering, ML engineering, backend systems, and MLOps by adding production tests, CI/CD, model evaluation, data pipelines, observability, and deployment-ready documentation.
+I am targeting AI engineering, ML engineering, backend engineering, and MLOps roles with tested systems that include CI, measurable evaluation, observability, security controls, and deployment documentation.
 
 ## What I Am Building Toward
 

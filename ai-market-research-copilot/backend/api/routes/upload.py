@@ -1,18 +1,19 @@
 import uuid
-import shutil
 from pathlib import Path
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from backend.core.config import get_settings
 from backend.core.database import get_db
-from backend.models.db_models import Session as DBSession, Document
-from backend.models.schemas import UploadResponse
-from backend.services.document_parser import parse_document
-from backend.services.chunker import chunk_pages
-from backend.services.vector_store import FAISSVectorStore
 from backend.core.logging import get_logger
+from backend.core.safety import normalize_session_id, sanitize_upload_filename
+from backend.models.db_models import Document
+from backend.models.db_models import Session as DBSession
+from backend.models.schemas import UploadResponse
+from backend.services.chunker import chunk_pages
+from backend.services.document_parser import parse_document
+from backend.services.vector_store import FAISSVectorStore
 
 router = APIRouter(prefix="/upload", tags=["Upload"])
 logger = get_logger(__name__)
@@ -29,7 +30,8 @@ async def upload_file(
     db: Session = Depends(get_db),
 ):
     # Validate extension
-    ext = Path(file.filename).suffix.lower()
+    safe_filename = sanitize_upload_filename(file.filename)
+    ext = Path(safe_filename).suffix.lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
@@ -47,6 +49,7 @@ async def upload_file(
     # Create or reuse session
     if not session_id:
         session_id = str(uuid.uuid4())
+    session_id = normalize_session_id(session_id)
 
     db_session = db.query(DBSession).filter(DBSession.session_id == session_id).first()
     if not db_session:
@@ -58,12 +61,12 @@ async def upload_file(
     # Save file
     save_dir = settings.UPLOAD_DIR / session_id
     save_dir.mkdir(parents=True, exist_ok=True)
-    file_path = save_dir / file.filename
+    file_path = save_dir / safe_filename
 
     with open(file_path, "wb") as f:
         f.write(content)
 
-    logger.info(f"[{session_id}] Saved upload: {file.filename} ({len(content) / 1024:.1f} KB)")
+    logger.info(f"[{session_id}] Saved upload: {safe_filename} ({len(content) / 1024:.1f} KB)")
 
     # Parse → chunk → embed → index
     try:
@@ -76,7 +79,7 @@ async def upload_file(
         # Persist document record
         doc = Document(
             session_id=session_id,
-            filename=file.filename,
+            filename=safe_filename,
             file_type=ext.lstrip("."),
             file_path=str(file_path),
             file_size_kb=round(len(content) / 1024, 2),
@@ -88,15 +91,15 @@ async def upload_file(
 
         return UploadResponse(
             session_id=session_id,
-            filename=file.filename,
+            filename=safe_filename,
             file_type=ext.lstrip("."),
             chunk_count=len(chunks),
             message=f"Indexed {len(chunks)} chunks. Total vectors in session: {total_vectors}",
         )
 
     except Exception as e:
-        logger.error(f"[{session_id}] Indexing failed for {file.filename}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to process document: {str(e)}")
+        logger.error(f"[{session_id}] Indexing failed for {safe_filename}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process document: {str(e)}") from e
 
 
 @router.get("/{session_id}/documents")

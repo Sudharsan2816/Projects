@@ -1,14 +1,13 @@
 import json
-import pickle
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
 import faiss
 
 from backend.core.config import get_settings
 from backend.core.logging import get_logger
-from .embedder import embed_texts, embed_query
+from backend.core.safety import normalize_session_id
+
+from .embedder import embed_query, embed_texts
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -18,9 +17,9 @@ class FAISSVectorStore:
     """Per-session FAISS index with chunk metadata store."""
 
     def __init__(self, session_id: str):
-        self.session_id = session_id
-        self.index_path = settings.INDEX_DIR / f"{session_id}.faiss"
-        self.meta_path = settings.INDEX_DIR / f"{session_id}.meta"
+        self.session_id = normalize_session_id(session_id)
+        self.index_path = settings.INDEX_DIR / f"{self.session_id}.faiss"
+        self.meta_path = settings.INDEX_DIR / f"{self.session_id}.meta"
         self.index: Optional[faiss.IndexFlatIP] = None
         self.metadata: List[Dict[str, Any]] = []
 
@@ -29,8 +28,7 @@ class FAISSVectorStore:
     def _load(self):
         if self.index_path.exists() and self.meta_path.exists():
             self.index = faiss.read_index(str(self.index_path))
-            with open(self.meta_path, "rb") as f:
-                self.metadata = pickle.load(f)
+            self.metadata = json.loads(self.meta_path.read_text(encoding="utf-8"))
             logger.info(
                 f"[{self.session_id}] Loaded FAISS index: {self.index.ntotal} vectors"
             )
@@ -40,8 +38,7 @@ class FAISSVectorStore:
 
     def _save(self):
         faiss.write_index(self.index, str(self.index_path))
-        with open(self.meta_path, "wb") as f:
-            pickle.dump(self.metadata, f)
+        self.meta_path.write_text(json.dumps(self.metadata, ensure_ascii=True), encoding="utf-8")
         logger.info(
             f"[{self.session_id}] Saved FAISS index: {self.index.ntotal} vectors"
         )
@@ -89,7 +86,7 @@ class FAISSVectorStore:
         scores, indices = self.index.search(q_emb, k)
 
         results = []
-        for score, idx in zip(scores[0], indices[0]):
+        for score, idx in zip(scores[0], indices[0], strict=False):
             if idx >= 0 and idx < len(self.metadata):
                 results.append((self.metadata[idx], float(score)))
         return results

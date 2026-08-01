@@ -1,0 +1,19 @@
+name: enterprise-rag-ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check app tests
+      - run: python -m pytest -q
+      - run: python -m app.evaluation.rbac_eval --check

@@ -1,5 +1,7 @@
+import os
 from functools import lru_cache
 from typing import List
+
 import numpy as np
 from openai import OpenAI
 
@@ -14,9 +16,16 @@ settings = get_settings()
 
 @lru_cache(maxsize=1)
 def _load_local_model():
+    settings.MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("HF_HOME", str(settings.MODEL_CACHE_DIR))
+    os.environ.setdefault("HF_HUB_CACHE", str(settings.MODEL_CACHE_DIR / "hub"))
+    os.environ.setdefault("TRANSFORMERS_CACHE", str(settings.MODEL_CACHE_DIR / "transformers"))
     from sentence_transformers import SentenceTransformer
     logger.info(f"Loading local embedding model: {settings.EMBEDDING_MODEL}")
-    model = SentenceTransformer(settings.EMBEDDING_MODEL)
+    model = SentenceTransformer(
+        settings.EMBEDDING_MODEL,
+        cache_folder=str(settings.MODEL_CACHE_DIR),
+    )
     logger.info("Local embedding model loaded")
     return model
 

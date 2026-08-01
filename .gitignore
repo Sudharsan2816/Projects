@@ -9,20 +9,46 @@ Portfolio/
 Portfolio Updated/
 .phase2-backup/
 ai-ml-learning-platform/
-aus-weather-rain-prediction/
 bear-house-merchandising-trainer/
-enterprise-rag/
 gh-pages-phase2/
-job-apply-bot/
 open-design/
 FinalProject_AUSWeather.ipynb
-({i
-[i
+
+# Stray local files. Escape glob metacharacters so tools such as rg can parse this file.
+([{]i
 [[]i
 
-# Secrets and environment
+# Secrets, credentials, and environment
 .env
 *.env
+.env.*
+*.env.*
+!.env.example
+!*.env.example
+secrets/
+.secrets/
+credentials/
+.credentials/
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+*.keystore
+*.kdbx
+*.env.key
+*.env.enc
+*.secret.enc
+*_secret.*
+*_secrets.*
+*_credentials.*
+*credentials.json
+*service-account*.json
+token.json
+tokens.json
 
 # Python
 __pycache__/

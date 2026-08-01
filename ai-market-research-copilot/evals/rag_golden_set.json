@@ -1,0 +1,14 @@
+[
+  {
+    "id": "market-size-source-grounding",
+    "question": "What market-size evidence is available in the uploaded report?",
+    "relevant_chunk_ids": ["market_report.pdf::3"],
+    "notes": "Retriever should return the chunk containing the source market-size paragraph."
+  },
+  {
+    "id": "competitor-pricing-source-grounding",
+    "question": "Which competitor pricing ranges are supported by the uploaded documents?",
+    "relevant_chunk_ids": ["competitor_pricing.md::1", "competitor_pricing.md::2"],
+    "notes": "Use this as a template for project-specific labeled eval rows."
+  }
+]

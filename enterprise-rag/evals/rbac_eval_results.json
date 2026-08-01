@@ -1,0 +1,105 @@
+{
+  "generated_at": "2026-08-01T06:45:40.363394+00:00",
+  "cases": 7,
+  "passed": 7,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "results": [
+    {
+      "id": "engineer-operational-logs",
+      "role": "Engineer",
+      "query": "show outage logs for payments api",
+      "intent": "json",
+      "decision": "allowed",
+      "authorized_permissions": [
+        "logs"
+      ],
+      "denied_permissions": [
+        "operational_logs"
+      ],
+      "passed": true
+    },
+    {
+      "id": "engineer-employee-denied",
+      "role": "Engineer",
+      "query": "fetch employee salary records",
+      "intent": "sql",
+      "decision": "access_denied",
+      "authorized_permissions": [],
+      "denied_permissions": [
+        "employee_records"
+      ],
+      "passed": true
+    },
+    {
+      "id": "hr-employee-allowed",
+      "role": "HR",
+      "query": "fetch employee records",
+      "intent": "sql",
+      "decision": "allowed",
+      "authorized_permissions": [
+        "employee_records"
+      ],
+      "denied_permissions": [],
+      "passed": true
+    },
+    {
+      "id": "finance-revenue-allowed",
+      "role": "Finance",
+      "query": "show finance revenue for FY26 Q1",
+      "intent": "sql",
+      "decision": "allowed",
+      "authorized_permissions": [
+        "finance_db"
+      ],
+      "denied_permissions": [],
+      "passed": true
+    },
+    {
+      "id": "operations-incident-allowed",
+      "role": "Operations",
+      "query": "show incident report csv for outage",
+      "intent": "csv",
+      "decision": "allowed",
+      "authorized_permissions": [
+        "incident_reports"
+      ],
+      "denied_permissions": [],
+      "passed": true
+    },
+    {
+      "id": "finance-compliance-denied",
+      "role": "Finance",
+      "query": "summarize compliance manual",
+      "intent": "pdf",
+      "decision": "access_denied",
+      "authorized_permissions": [],
+      "denied_permissions": [
+        "compliance_docs"
+      ],
+      "passed": true
+    },
+    {
+      "id": "admin-hybrid-allowed",
+      "role": "Admin",
+      "query": "give me an enterprise overview",
+      "intent": "hybrid",
+      "decision": "allowed",
+      "authorized_permissions": [
+        "HR_documents",
+        "audit_logs",
+        "compliance_docs",
+        "employee_records",
+        "finance_db",
+        "financial_reports",
+        "incident_reports",
+        "logs",
+        "operational_logs",
+        "policies",
+        "technical_docs"
+      ],
+      "denied_permissions": [],
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "engineer-operational-logs",
+    "role": "Engineer",
+    "query": "show outage logs for payments api",
+    "expected_intent": "json",
+    "expected_decision": "allowed",
+    "expected_authorized_permissions": ["logs"]
+  },
+  {
+    "id": "engineer-employee-denied",
+    "role": "Engineer",
+    "query": "fetch employee salary records",
+    "expected_intent": "sql",
+    "expected_decision": "access_denied"
+  },
+  {
+    "id": "hr-employee-allowed",
+    "role": "HR",
+    "query": "fetch employee records",
+    "expected_intent": "sql",
+    "expected_decision": "allowed",
+    "expected_authorized_permissions": ["employee_records"]
+  },
+  {
+    "id": "finance-revenue-allowed",
+    "role": "Finance",
+    "query": "show finance revenue for FY26 Q1",
+    "expected_intent": "sql",
+    "expected_decision": "allowed",
+    "expected_authorized_permissions": ["finance_db"]
+  },
+  {
+    "id": "operations-incident-allowed",
+    "role": "Operations",
+    "query": "show incident report csv for outage",
+    "expected_intent": "csv",
+    "expected_decision": "allowed",
+    "expected_authorized_permissions": ["incident_reports"]
+  },
+  {
+    "id": "finance-compliance-denied",
+    "role": "Finance",
+    "query": "summarize compliance manual",
+    "expected_intent": "pdf",
+    "expected_decision": "access_denied"
+  },
+  {
+    "id": "admin-hybrid-allowed",
+    "role": "Admin",
+    "query": "give me an enterprise overview",
+    "expected_intent": "hybrid",
+    "expected_decision": "allowed",
+    "expected_authorized_permissions": ["technical_docs", "finance_db", "employee_records"]
+  }
+]

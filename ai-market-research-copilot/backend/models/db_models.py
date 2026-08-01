@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, ForeignKey
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+
 from backend.core.database import Base
 
 
@@ -47,7 +49,11 @@ class Report(Base):
     market_trends = Column(Text, nullable=True)     # JSON string
     swot_analysis = Column(Text, nullable=True)     # JSON string
     status = Column(String(30), default="pending")  # pending, generating, done, failed
+    progress = Column(Integer, default=0)
+    current_stage = Column(String(80), nullable=True)
+    error_message = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     session = relationship("Session", back_populates="reports")
 

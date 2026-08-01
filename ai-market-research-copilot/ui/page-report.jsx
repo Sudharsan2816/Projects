@@ -1,6 +1,6 @@
 /* Page: Report */
 
-const PageReport = ({ report, reports, sessionId, setRoute }) => {
+const PageReport = ({ report, reports, sessionId, setRoute, onSelectReport }) => {
   const [tab, setTab] = React.useState("summary");
 
   if (!report) {
@@ -24,8 +24,7 @@ const PageReport = ({ report, reports, sessionId, setRoute }) => {
         <div className="eyebrow mb-16">Available Reports</div>
         <div className="col gap-12">
           {doneReports.map(r => (
-            <div key={r.id} className="card card-hover" style={{ cursor: "pointer" }}
-                 onClick={() => window.location.reload()}>
+            <button key={r.id} type="button" className="card report-picker" onClick={() => onSelectReport(r)}>
               <div className="row" style={{ justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{r.topic}</div>
@@ -33,7 +32,7 @@ const PageReport = ({ report, reports, sessionId, setRoute }) => {
                 </div>
                 <span className="badge badge-pos">DONE</span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -56,15 +55,14 @@ const PageReport = ({ report, reports, sessionId, setRoute }) => {
           <button className="btn" onClick={() => setRoute("research")}>
             <Icon name="refresh" size={13} /> New report
           </button>
-          {m.reportPath && (
+          {m.downloadReady && (
             <a
-              href={`${window.API_BASE}/api/v1/report/${m.id}/download`}
+              className="btn btn-primary"
+              href={API.reportDownloadUrl(sessionId, m.id)}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <button className="btn btn-primary">
-                <Icon name="download" size={13} /> Export PDF
-              </button>
+              <Icon name="download" size={13} /> Export PDF
             </a>
           )}
         </div>
@@ -85,13 +83,13 @@ const PageReport = ({ report, reports, sessionId, setRoute }) => {
           ["trends",      "Trends",       m.trends.length],
           ["swot",        "SWOT"],
         ].map(([k, l, c]) => (
-          <div key={k} className={`tab ${tab === k ? "tab-active" : ""}`} onClick={() => setTab(k)}>
+          <button type="button" key={k} className={`tab ${tab === k ? "tab-active" : ""}`} onClick={() => setTab(k)}>
             {l}{c != null && <span className="tab-count tnum">{c}</span>}
-          </div>
+          </button>
         ))}
       </div>
 
-      {tab === "summary"     && <SummaryTab     summary={m.executiveSummary} docs={[]} setRoute={setRoute} reportId={m.id} />}
+      {tab === "summary" && <SummaryTab summary={m.executiveSummary} setRoute={setRoute} reportId={m.id} sessionId={sessionId} downloadReady={m.downloadReady} />}
       {tab === "competitors" && <CompetitorsTab data={m.competitors} />}
       {tab === "pricing"     && <PricingTab     data={m.pricing} />}
       {tab === "trends"      && <TrendsTab      data={m.trends} />}
@@ -110,7 +108,7 @@ const ReportStat = ({ label, value, icon }) => (
   </div>
 );
 
-const SummaryTab = ({ summary, setRoute, reportId }) => (
+const SummaryTab = ({ summary, setRoute, reportId, sessionId, downloadReady }) => (
   <div className="grid-2 fade-in" style={{ gridTemplateColumns: "1.7fr 1fr", gap: 24 }}>
     <div className="card" style={{ padding: 28 }}>
       <div className="eyebrow mb-16">Executive synthesis</div>
@@ -125,24 +123,19 @@ const SummaryTab = ({ summary, setRoute, reportId }) => (
         <button className="btn btn-primary btn-sm" onClick={() => setRoute("chat")}>
           <Icon name="chat" size={13} /> Ask follow-ups
         </button>
-        {reportId && (
-          <a href={`${window.API_BASE}/api/v1/report/${reportId}/download`} target="_blank" rel="noopener noreferrer">
-            <button className="btn btn-sm"><Icon name="download" size={13} /> Export PDF</button>
+        {reportId && downloadReady && (
+          <a className="btn btn-sm" href={API.reportDownloadUrl(sessionId, reportId)} target="_blank" rel="noopener noreferrer">
+            <Icon name="download" size={13} /> Export PDF
           </a>
         )}
       </div>
     </div>
     <div className="col gap-16">
       <div className="card">
-        <div className="eyebrow mb-12">Confidence</div>
-        <div className="row" style={{ alignItems: "baseline", gap: 8 }}>
-          <div style={{ fontSize: 36, fontWeight: 500, fontFamily: "var(--font-serif)", color: "var(--accent)" }}>
-            {summary ? "85" : "—"}
-          </div>
-          <div className="dim" style={{ fontSize: 13 }}>/ 100</div>
-        </div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-          Based on corpus coverage and LLM grounding.
+        <div className="eyebrow mb-12">Review status</div>
+        <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 8 }}>AI generated</div>
+        <div className="muted" style={{ fontSize: 12 }}>
+          Verify material claims and figures against source documents before making decisions.
         </div>
       </div>
       <div className="card">
@@ -240,7 +233,7 @@ const PricingTab = ({ data }) => {
                 <div className="bar-track" style={{ height: 10 }}>
                   <div className="bar-fill" style={{
                     width: `${p.mid ? (p.mid / max) * 100 : 30}%`,
-                    background: "linear-gradient(90deg, var(--accent), oklch(0.86 0.18 90))"
+                    background: "var(--accent)"
                   }}></div>
                 </div>
                 <div className="bar-value">{p.range}</div>

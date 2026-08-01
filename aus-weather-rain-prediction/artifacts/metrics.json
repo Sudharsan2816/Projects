@@ -1,0 +1,387 @@
+{
+  "evaluation_strategy": {
+    "split": "chronological 60/20/20",
+    "cross_validation": "expanding-window TimeSeriesSplit(n_splits=5)",
+    "hyperparameter_metric": "balanced_accuracy",
+    "threshold_metric": "validation F2 with minimum precision 0.50"
+  },
+  "dataset_rows": 7557,
+  "target_counts": {
+    "No": 5766,
+    "Yes": 1791
+  },
+  "temporal_split": {
+    "train": {
+      "rows": 4534,
+      "start": "2008-07-01",
+      "end": "2013-11-15",
+      "rain_rate": 0.24768416409351565
+    },
+    "validation": {
+      "rows": 1511,
+      "start": "2013-11-16",
+      "end": "2015-10-28",
+      "rain_rate": 0.20052945069490405
+    },
+    "test": {
+      "rows": 1512,
+      "start": "2015-10-29",
+      "end": "2017-06-25",
+      "rain_rate": 0.2414021164021164
+    }
+  },
+  "numeric_features": [
+    "MinTemp",
+    "MaxTemp",
+    "Rainfall",
+    "Evaporation",
+    "Sunshine",
+    "WindGustSpeed",
+    "WindSpeed9am",
+    "WindSpeed3pm",
+    "Humidity9am",
+    "Humidity3pm",
+    "Pressure9am",
+    "Pressure3pm",
+    "Cloud9am",
+    "Cloud3pm",
+    "Temp9am",
+    "Temp3pm"
+  ],
+  "categorical_features": [
+    "Location",
+    "WindGustDir",
+    "WindDir9am",
+    "WindDir3pm",
+    "RainYesterday",
+    "Season"
+  ],
+  "champion": "logistic_regression",
+  "random_forest": {
+    "best_params": {
+      "classifier__max_depth": null,
+      "classifier__min_samples_split": 5,
+      "classifier__n_estimators": 50
+    },
+    "best_cv_balanced_accuracy": 0.6838490353671884,
+    "threshold_selection": {
+      "threshold": 0.31385714285714283,
+      "precision": 0.5,
+      "recall": 0.6864686468646864,
+      "f_beta": 0.6388206388206388
+    },
+    "validation": {
+      "threshold": 0.31385714285714283,
+      "accuracy": 0.799470549305096,
+      "balanced_accuracy": 0.7571416082005551,
+      "precision_yes": 0.5,
+      "recall_yes": 0.6864686468646864,
+      "f2_yes": 0.6388206388206388,
+      "average_precision": 0.6408603136028455,
+      "roc_auc": 0.8511463729154374,
+      "brier_score": 0.11116277150703786,
+      "classification_report": {
+        "No": {
+          "precision": 0.91324200913242,
+          "recall": 0.8278145695364238,
+          "f1-score": 0.8684324793747286,
+          "support": 1208.0
+        },
+        "Yes": {
+          "precision": 0.5,
+          "recall": 0.6864686468646864,
+          "f1-score": 0.5785813630041725,
+          "support": 303.0
+        },
+        "accuracy": 0.799470549305096,
+        "macro avg": {
+          "precision": 0.70662100456621,
+          "recall": 0.7571416082005551,
+          "f1-score": 0.7235069211894505,
+          "support": 1511.0
+        },
+        "weighted avg": {
+          "precision": 0.8303748160370373,
+          "recall": 0.799470549305096,
+          "f1-score": 0.8103087942256362,
+          "support": 1511.0
+        }
+      },
+      "classification_report_text": "              precision    recall  f1-score   support\n\n          No       0.91      0.83      0.87      1208\n         Yes       0.50      0.69      0.58       303\n\n    accuracy                           0.80      1511\n   macro avg       0.71      0.76      0.72      1511\nweighted avg       0.83      0.80      0.81      1511\n",
+      "confusion_matrix": [
+        [
+          1000,
+          208
+        ],
+        [
+          95,
+          208
+        ]
+      ]
+    },
+    "test": {
+      "threshold": 0.31385714285714283,
+      "accuracy": 0.7976190476190477,
+      "balanced_accuracy": 0.7694784488421254,
+      "precision_yes": 0.5637149028077754,
+      "recall_yes": 0.7150684931506849,
+      "f2_yes": 0.6786271450858035,
+      "average_precision": 0.6725673242997052,
+      "roc_auc": 0.8529839605403017,
+      "brier_score": 0.12366356151989344,
+      "classification_report": {
+        "No": {
+          "precision": 0.9008579599618685,
+          "recall": 0.8238884045335658,
+          "f1-score": 0.860655737704918,
+          "support": 1147.0
+        },
+        "Yes": {
+          "precision": 0.5637149028077754,
+          "recall": 0.7150684931506849,
+          "f1-score": 0.6304347826086957,
+          "support": 365.0
+        },
+        "accuracy": 0.7976190476190477,
+        "macro avg": {
+          "precision": 0.7322864313848219,
+          "recall": 0.7694784488421254,
+          "f1-score": 0.7455452601568069,
+          "support": 1512.0
+        },
+        "weighted avg": {
+          "precision": 0.8194709124345906,
+          "recall": 0.7976190476190477,
+          "f1-score": 0.8050799119045733,
+          "support": 1512.0
+        }
+      },
+      "classification_report_text": "              precision    recall  f1-score   support\n\n          No       0.90      0.82      0.86      1147\n         Yes       0.56      0.72      0.63       365\n\n    accuracy                           0.80      1512\n   macro avg       0.73      0.77      0.75      1512\nweighted avg       0.82      0.80      0.81      1512\n",
+      "confusion_matrix": [
+        [
+          945,
+          202
+        ],
+        [
+          104,
+          261
+        ]
+      ]
+    }
+  },
+  "logistic_regression": {
+    "best_params": {
+      "classifier__class_weight": "balanced",
+      "classifier__penalty": "l1",
+      "classifier__solver": "liblinear"
+    },
+    "best_cv_balanced_accuracy": 0.7659952911840963,
+    "threshold_selection": {
+      "threshold": 0.5018685151963099,
+      "precision": 0.5,
+      "recall": 0.7260726072607261,
+      "f_beta": 0.665859564164649
+    },
+    "validation": {
+      "threshold": 0.5018685151963099,
+      "accuracy": 0.799470549305096,
+      "balanced_accuracy": 0.7719767009813564,
+      "precision_yes": 0.5,
+      "recall_yes": 0.7260726072607261,
+      "f2_yes": 0.6658595641646489,
+      "average_precision": 0.6596175316033774,
+      "roc_auc": 0.861817804296986,
+      "brier_score": 0.13839308546456147,
+      "classification_report": {
+        "No": {
+          "precision": 0.9225023342670402,
+          "recall": 0.8178807947019867,
+          "f1-score": 0.8670469504168495,
+          "support": 1208.0
+        },
+        "Yes": {
+          "precision": 0.5,
+          "recall": 0.7260726072607261,
+          "f1-score": 0.5921938088829072,
+          "support": 303.0
+        },
+        "accuracy": 0.799470549305096,
+        "macro avg": {
+          "precision": 0.7112511671335201,
+          "recall": 0.7719767009813564,
+          "f1-score": 0.7296203796498784,
+          "support": 1511.0
+        },
+        "weighted avg": {
+          "precision": 0.8377781732591558,
+          "recall": 0.799470549305096,
+          "f1-score": 0.8119308009232793,
+          "support": 1511.0
+        }
+      },
+      "classification_report_text": "              precision    recall  f1-score   support\n\n          No       0.92      0.82      0.87      1208\n         Yes       0.50      0.73      0.59       303\n\n    accuracy                           0.80      1511\n   macro avg       0.71      0.77      0.73      1511\nweighted avg       0.84      0.80      0.81      1511\n",
+      "confusion_matrix": [
+        [
+          988,
+          220
+        ],
+        [
+          83,
+          220
+        ]
+      ]
+    },
+    "test": {
+      "threshold": 0.5018685151963099,
+      "accuracy": 0.7923280423280423,
+      "balanced_accuracy": 0.7678589769619377,
+      "precision_yes": 0.5536842105263158,
+      "recall_yes": 0.7205479452054795,
+      "f2_yes": 0.6795865633074936,
+      "average_precision": 0.6642958689364399,
+      "roc_auc": 0.84359197907585,
+      "brier_score": 0.15232048572902607,
+      "classification_report": {
+        "No": {
+          "precision": 0.9016393442622951,
+          "recall": 0.8151700087183958,
+          "f1-score": 0.8562271062271062,
+          "support": 1147.0
+        },
+        "Yes": {
+          "precision": 0.5536842105263158,
+          "recall": 0.7205479452054795,
+          "f1-score": 0.6261904761904762,
+          "support": 365.0
+        },
+        "accuracy": 0.7923280423280423,
+        "macro avg": {
+          "precision": 0.7276617773943055,
+          "recall": 0.7678589769619377,
+          "f1-score": 0.7412087912087912,
+          "support": 1512.0
+        },
+        "weighted avg": {
+          "precision": 0.8176422385654482,
+          "recall": 0.7923280423280423,
+          "f1-score": 0.8006957768862529,
+          "support": 1512.0
+        }
+      },
+      "classification_report_text": "              precision    recall  f1-score   support\n\n          No       0.90      0.82      0.86      1147\n         Yes       0.55      0.72      0.63       365\n\n    accuracy                           0.79      1512\n   macro avg       0.73      0.77      0.74      1512\nweighted avg       0.82      0.79      0.80      1512\n",
+      "confusion_matrix": [
+        [
+          935,
+          212
+        ],
+        [
+          102,
+          263
+        ]
+      ]
+    }
+  },
+  "test_drift": {
+    "rows": 1512,
+    "status": "warning",
+    "max_psi": 0.10335601475410343,
+    "drifted_features": [],
+    "warning_features": [
+      "WindSpeed3pm"
+    ],
+    "features": {
+      "MinTemp": {
+        "type": "numeric",
+        "psi": 0.023438877919642383
+      },
+      "MaxTemp": {
+        "type": "numeric",
+        "psi": 0.027593286319686376
+      },
+      "Rainfall": {
+        "type": "numeric",
+        "psi": 0.0012926817670970193
+      },
+      "Evaporation": {
+        "type": "numeric",
+        "psi": 0.030017466377386136
+      },
+      "Sunshine": {
+        "type": "numeric",
+        "psi": 0.015088727678533167
+      },
+      "WindGustSpeed": {
+        "type": "numeric",
+        "psi": 0.0554181483722124
+      },
+      "WindSpeed9am": {
+        "type": "numeric",
+        "psi": 0.097887145690884
+      },
+      "WindSpeed3pm": {
+        "type": "numeric",
+        "psi": 0.10335601475410343
+      },
+      "Humidity9am": {
+        "type": "numeric",
+        "psi": 0.0075507494555233645
+      },
+      "Humidity3pm": {
+        "type": "numeric",
+        "psi": 0.010837675520483052
+      },
+      "Pressure9am": {
+        "type": "numeric",
+        "psi": 0.014253278206170951
+      },
+      "Pressure3pm": {
+        "type": "numeric",
+        "psi": 0.010918821104774962
+      },
+      "Cloud9am": {
+        "type": "numeric",
+        "psi": 0.005928163545745275
+      },
+      "Cloud3pm": {
+        "type": "numeric",
+        "psi": 0.008465280220676627
+      },
+      "Temp9am": {
+        "type": "numeric",
+        "psi": 0.0386846546329095
+      },
+      "Temp3pm": {
+        "type": "numeric",
+        "psi": 0.019196394615894175
+      },
+      "Location": {
+        "type": "categorical",
+        "psi": 0.004109863138858602
+      },
+      "WindGustDir": {
+        "type": "categorical",
+        "psi": 0.04910289439950142
+      },
+      "WindDir9am": {
+        "type": "categorical",
+        "psi": 0.08233526243735828
+      },
+      "WindDir3pm": {
+        "type": "categorical",
+        "psi": 0.03307153537699584
+      },
+      "RainYesterday": {
+        "type": "categorical",
+        "psi": 0.0012290413296197349
+      },
+      "Season": {
+        "type": "categorical",
+        "psi": 0.05149566987659614
+      }
+    },
+    "thresholds": {
+      "warning": 0.1,
+      "drift": 0.2
+    }
+  }
+}

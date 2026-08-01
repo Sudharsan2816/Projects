@@ -1,0 +1,66 @@
+{
+  "corpus": [
+    {
+      "chunk_id": "market_report.pdf::0",
+      "source": "market_report.pdf",
+      "chunk_index": 0,
+      "text": "The global AI note-taking software market was estimated at USD 450 million in 2025 and is projected to reach USD 1.2 billion by 2030, representing a compound annual growth rate near 22 percent."
+    },
+    {
+      "chunk_id": "market_report.pdf::1",
+      "source": "market_report.pdf",
+      "chunk_index": 1,
+      "text": "Adoption is strongest among remote teams, consulting firms, and sales organizations that need searchable meeting records and automated action items."
+    },
+    {
+      "chunk_id": "competitor_pricing.md::0",
+      "source": "competitor_pricing.md",
+      "chunk_index": 0,
+      "text": "Otter offers a free tier and a business plan priced at approximately USD 20 per user each month when billed monthly."
+    },
+    {
+      "chunk_id": "competitor_pricing.md::1",
+      "source": "competitor_pricing.md",
+      "chunk_index": 1,
+      "text": "Fireflies provides a free tier, a Pro plan near USD 18 per seat monthly, and a Business plan near USD 29 per seat monthly."
+    },
+    {
+      "chunk_id": "buyer_interviews.txt::0",
+      "source": "buyer_interviews.txt",
+      "chunk_index": 0,
+      "text": "Interviewed buyers ranked transcript accuracy, data retention controls, CRM integrations, and reliable speaker identification as their leading purchase criteria."
+    },
+    {
+      "chunk_id": "buyer_interviews.txt::1",
+      "source": "buyer_interviews.txt",
+      "chunk_index": 1,
+      "text": "The most common adoption barrier was concern about recording consent and the storage of confidential meeting content."
+    }
+  ],
+  "cases": [
+    {
+      "id": "market-size",
+      "question": "What is the projected size and growth rate of the AI note-taking market?",
+      "relevant_chunk_ids": ["market_report.pdf::0"],
+      "reference_answer": "The market is projected to reach USD 1.2 billion by 2030, with compound annual growth near 22 percent.",
+      "citations": [{"chunk_id": "market_report.pdf::0"}]
+    },
+    {
+      "id": "competitor-pricing",
+      "question": "How do Otter and Fireflies price their paid plans?",
+      "relevant_chunk_ids": ["competitor_pricing.md::0", "competitor_pricing.md::1"],
+      "reference_answer": "Otter's business plan is approximately USD 20 per user monthly. Fireflies lists Pro near USD 18 and Business near USD 29 per seat monthly.",
+      "citations": [
+        {"chunk_id": "competitor_pricing.md::0"},
+        {"chunk_id": "competitor_pricing.md::1"}
+      ]
+    },
+    {
+      "id": "buyer-criteria",
+      "question": "Which product capabilities matter most to buyers?",
+      "relevant_chunk_ids": ["buyer_interviews.txt::0"],
+      "reference_answer": "Buyers prioritize transcript accuracy, retention controls, CRM integrations, and reliable speaker identification.",
+      "citations": [{"chunk_id": "buyer_interviews.txt::0"}]
+    }
+  ]
+}

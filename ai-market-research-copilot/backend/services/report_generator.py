@@ -1,21 +1,25 @@
-import json
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, List
+from html import escape
+from pathlib import Path
+from typing import Any
 
 from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch, cm
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import cm
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    HRFlowable, PageBreak, KeepTogether,
+    HRFlowable,
+    PageBreak,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
 )
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 
 from backend.core.config import get_settings
 from backend.core.logging import get_logger
-
 
 # Reportlab's default fonts (Helvetica) are Latin-1 only.
 # Replace common non-Latin-1 chars so the PDF doesn't crash.
@@ -40,7 +44,8 @@ def _safe(text: str) -> str:
         return text
     for ch, repl in _CHAR_MAP.items():
         text = text.replace(ch, repl)
-    return text.encode("latin-1", errors="replace").decode("latin-1")
+    latin_text = text.encode("latin-1", errors="replace").decode("latin-1")
+    return escape(latin_text, quote=False)
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -140,7 +145,7 @@ def _data_source_banner(story, styles, data_source: str):
 def _cover_page(story, styles, topic: str, date_str: str):
     # Blue header block simulated with a table
     header_data = [[
-        Paragraph(f"AI Market Research Report", styles["cover_title"]),
+        Paragraph("AI Market Research Report", styles["cover_title"]),
     ]]
     header_table = Table(header_data, colWidths=[480])
     header_table.setStyle(TableStyle([
@@ -224,8 +229,8 @@ def _competitors_section(story, styles, competitors: list):
         # Description + S/W
         sw_data = [
             [
-                Paragraph(f"<b>Strengths</b>", styles["sub_header"]),
-                Paragraph(f"<b>Weaknesses</b>", styles["sub_header"]),
+                Paragraph("<b>Strengths</b>", styles["sub_header"]),
+                Paragraph("<b>Weaknesses</b>", styles["sub_header"]),
             ],
             [
                 Paragraph("\n".join(f"* {_safe(s)}" for s in strengths) or "N/A", styles["bullet"]),
@@ -373,7 +378,7 @@ def generate_pdf_report(
     )
 
     styles = _styles()
-    story = []
+    story: list[Any] = []
     date_str = datetime.now().strftime("%B %d, %Y")
 
     # Cover

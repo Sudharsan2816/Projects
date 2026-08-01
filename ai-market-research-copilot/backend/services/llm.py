@@ -1,14 +1,55 @@
-import httpx
 import json
-from typing import List, Tuple, Dict, Any
+from time import perf_counter
+from typing import Any, Callable, Dict, List, Tuple
 
+import httpx
 from openai import OpenAI
 
 from backend.core.config import get_settings
 from backend.core.logging import get_logger
+from backend.core.observability import record_provider_call
 
 logger = get_logger(__name__)
 settings = get_settings()
+
+
+class LLMProviderError(RuntimeError):
+    """Raised after every configured provider has failed."""
+
+    def __init__(self, diagnostics: dict[str, str]):
+        self.diagnostics = diagnostics
+        summary = "; ".join(f"{name}: {message}" for name, message in diagnostics.items())
+        super().__init__(f"No LLM provider could complete the request. {summary}")
+
+
+def _observed_generate(
+    provider: str,
+    model: str,
+    prompt: str,
+    operation: Callable[[], str],
+) -> str:
+    started = perf_counter()
+    try:
+        response = operation()
+    except Exception:
+        record_provider_call(
+            provider=provider,
+            model=model,
+            prompt=prompt,
+            response="",
+            duration_ms=(perf_counter() - started) * 1000,
+            success=False,
+        )
+        raise
+    record_provider_call(
+        provider=provider,
+        model=model,
+        prompt=prompt,
+        response=response,
+        duration_ms=(perf_counter() - started) * 1000,
+        success=True,
+    )
+    return response
 
 
 # ── Gemini (lazy import — only used when LLM_PROVIDER=gemini) ────────────────
@@ -17,11 +58,11 @@ def _gemini_generate(prompt: str, system: str = "") -> str:
     try:
         from google import genai
         from google.genai import types
-    except ImportError:
-        raise RuntimeError("google-genai not installed. Run: pip install google-genai")
+    except ImportError as exc:
+        raise RuntimeError("google-genai not installed. Run: pip install google-genai") from exc
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     response = client.models.generate_content(
-        model="gemini-2.0-flash-lite",
+        model=settings.GEMINI_MODEL,
         contents=prompt,
         config=types.GenerateContentConfig(
             system_instruction=system or "You are an expert market research analyst.",
@@ -29,6 +70,8 @@ def _gemini_generate(prompt: str, system: str = "") -> str:
             max_output_tokens=settings.LLM_MAX_OUTPUT_TOKENS,
         ),
     )
+    if not response.text:
+        raise RuntimeError("Gemini returned an empty response")
     return response.text.strip()
 
 
@@ -38,6 +81,7 @@ def _nvidia_generate(prompt: str, system: str = "") -> str:
     client = OpenAI(
         base_url=settings.NVIDIA_BASE_URL,
         api_key=settings.NVIDIA_API_KEY,
+        timeout=settings.LLM_REQUEST_TIMEOUT_SECONDS,
     )
     response = client.chat.completions.create(
         model=settings.NVIDIA_MODEL,
@@ -48,7 +92,10 @@ def _nvidia_generate(prompt: str, system: str = "") -> str:
         temperature=0.4,
         max_tokens=settings.LLM_MAX_OUTPUT_TOKENS,
     )
-    return response.choices[0].message.content.strip()
+    content = response.choices[0].message.content
+    if not content:
+        raise RuntimeError("NVIDIA returned an empty response")
+    return content.strip()
 
 
 # ── Ollama ────────────────────────────────────────────────────────────────────
@@ -65,7 +112,7 @@ def _ollama_generate(prompt: str, system: str = "") -> str:
         response = httpx.post(
             f"{settings.OLLAMA_BASE_URL}/api/generate",
             json=payload,
-            timeout=120,
+            timeout=settings.LLM_REQUEST_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
         return response.json()["response"].strip()
@@ -75,52 +122,121 @@ def _ollama_generate(prompt: str, system: str = "") -> str:
 
 # ── Public interface ──────────────────────────────────────────────────────────
 
-def generate(prompt: str, system: str = "") -> str:
-    provider = settings.LLM_PROVIDER.lower()
+def _provider_model(provider: str) -> str:
+    return {
+        "nvidia": settings.NVIDIA_MODEL,
+        "gemini": settings.GEMINI_MODEL,
+        "ollama": settings.OLLAMA_MODEL,
+    }[provider]
 
-    if provider == "nvidia" and settings.NVIDIA_API_KEY:
+
+def _provider_is_configured(provider: str) -> bool:
+    if provider == "nvidia":
+        return bool(settings.NVIDIA_API_KEY)
+    if provider == "gemini":
+        return bool(settings.GEMINI_API_KEY)
+    return provider == "ollama" and bool(settings.OLLAMA_BASE_URL)
+
+
+def configured_providers() -> list[str]:
+    """Return configured provider names without exposing credentials."""
+    return [name for name in ("nvidia", "gemini", "ollama") if _provider_is_configured(name)]
+
+
+def _provider_order(exclude: set[str] | None = None) -> list[str]:
+    preferred = settings.LLM_PROVIDER.lower().strip()
+    supported = ("nvidia", "gemini", "ollama")
+    order = [preferred, *supported] if preferred in supported else list(supported)
+    excluded = exclude or set()
+    return [
+        name
+        for index, name in enumerate(order)
+        if name not in order[:index] and name not in excluded and _provider_is_configured(name)
+    ]
+
+
+def _call_provider(provider: str, prompt: str, system: str) -> str:
+    operations = {
+        "nvidia": lambda: _nvidia_generate(prompt, system),
+        "gemini": lambda: _gemini_generate(prompt, system),
+        "ollama": lambda: _ollama_generate(prompt, system),
+    }
+    logger.info("Calling %s provider (%s)", provider, _provider_model(provider))
+    return _observed_generate(
+        provider,
+        _provider_model(provider),
+        prompt,
+        operations[provider],
+    )
+
+
+def _safe_provider_error(error: Exception) -> str:
+    status_code = getattr(error, "status_code", None)
+    message = str(error).lower()
+    if status_code in {401, 403} or "authorization failed" in message or "api key" in message:
+        return "authorization failed"
+    if status_code == 429 or "resource_exhausted" in message or "quota exceeded" in message:
+        return "quota exhausted"
+    if status_code == 404 or "not found" in message:
+        return "model or endpoint not found"
+    if "timed out" in message or "timeout" in message:
+        return "request timed out"
+    if "not installed" in message or isinstance(error, ImportError):
+        return "client dependency is not installed"
+    if (
+        "connection refused" in message
+        or "all connection attempts failed" in message
+        or "winerror 10061" in message
+        or "unable to connect" in message
+    ):
+        return "service is not running or reachable"
+    return "provider request failed"
+
+
+def generate(prompt: str, system: str = "", exclude: set[str] | None = None) -> str:
+    diagnostics: dict[str, str] = {}
+    providers = _provider_order(exclude)
+    if not providers:
+        raise LLMProviderError({"configuration": "no provider is configured"})
+
+    for provider in providers:
         try:
-            logger.info(f"Calling NVIDIA NIM ({settings.NVIDIA_MODEL})")
-            return _nvidia_generate(prompt, system)
-        except Exception as e:
-            logger.warning(f"NVIDIA failed: {e}")
-            if settings.GEMINI_API_KEY:
-                logger.info("Falling back to Gemini")
-                return _gemini_generate(prompt, system)
-            try:
-                logger.info("Falling back to Ollama")
-                return _ollama_generate(prompt, system)
-            except RuntimeError as oe:
-                raise RuntimeError(
-                    f"All LLM providers failed. NVIDIA: {e} | Ollama: {oe}"
-                ) from e
+            return _call_provider(provider, prompt, system)
+        except Exception as error:
+            reason = _safe_provider_error(error)
+            diagnostics[provider] = reason
+            logger.warning("%s provider failed: %s", provider, reason)
 
-    elif provider == "gemini" and settings.GEMINI_API_KEY:
-        try:
-            logger.info("Calling Gemini API")
-            return _gemini_generate(prompt, system)
-        except Exception as e:
-            logger.warning(f"Gemini failed: {e}")
-            try:
-                logger.info("Falling back to Ollama")
-                return _ollama_generate(prompt, system)
-            except RuntimeError as oe:
-                raise RuntimeError(
-                    f"All LLM providers failed. Gemini: {e} | Ollama: {oe}"
-                ) from e
+    raise LLMProviderError(diagnostics)
 
-    elif provider == "ollama":
-        logger.info(f"Calling Ollama ({settings.OLLAMA_MODEL})")
-        return _ollama_generate(prompt, system)
 
-    else:
-        if settings.NVIDIA_API_KEY:
-            return _nvidia_generate(prompt, system)
-        if settings.GEMINI_API_KEY:
-            return _gemini_generate(prompt, system)
-        raise RuntimeError(
-            "No LLM provider configured. Set NVIDIA_API_KEY, GEMINI_API_KEY, or point OLLAMA_BASE_URL."
-        )
+def check_provider(provider: str) -> dict[str, Any]:
+    """Run a minimal provider-specific prompt and return secret-free diagnostics."""
+    provider = provider.lower().strip()
+    if provider not in {"nvidia", "gemini", "ollama"}:
+        raise ValueError(f"Unsupported provider: {provider}")
+    if not _provider_is_configured(provider):
+        return {"provider": provider, "configured": False, "status": "not_configured"}
+
+    started = perf_counter()
+    try:
+        response = _call_provider(provider, "Reply with exactly: OK", "You are a connectivity check.")
+        return {
+            "provider": provider,
+            "model": _provider_model(provider),
+            "configured": True,
+            "status": "ok" if response.strip() else "empty_response",
+            "latency_ms": round((perf_counter() - started) * 1000, 1),
+        }
+    except Exception as error:
+        return {
+            "provider": provider,
+            "model": _provider_model(provider),
+            "configured": True,
+            "status": "failed",
+            "error": _safe_provider_error(error),
+            "latency_ms": round((perf_counter() - started) * 1000, 1),
+        }
 
 
 # ── NVIDIA Reranker ───────────────────────────────────────────────────────────
@@ -128,7 +244,7 @@ def generate(prompt: str, system: str = "") -> str:
 def rerank(
     query: str,
     candidates: List[Tuple[Dict[str, Any], float]],
-    top_k: int = None,
+    top_k: int | None = None,
 ) -> List[Tuple[Dict[str, Any], float]]:
     """
     Rerank (chunk, score) pairs using NVIDIA NIM reranker.
@@ -169,7 +285,11 @@ def rerank(
                 reverse=True,
             )
             return [(chunk, score) for (chunk, _), score in reranked[:top_k]]
-        except Exception:
+        except Exception as error:
+            logger.warning(
+                "NVIDIA reranker endpoint failed: %s",
+                _safe_provider_error(error),
+            )
             continue
 
     # Reranker unavailable — return top_k by FAISS score
@@ -185,7 +305,13 @@ def generate_stream(prompt: str, system: str = ""):
     """
     provider = settings.LLM_PROVIDER.lower()
     if provider == "nvidia" and settings.NVIDIA_API_KEY:
-        client = OpenAI(base_url=settings.NVIDIA_BASE_URL, api_key=settings.NVIDIA_API_KEY)
+        client = OpenAI(
+            base_url=settings.NVIDIA_BASE_URL,
+            api_key=settings.NVIDIA_API_KEY,
+            timeout=settings.LLM_REQUEST_TIMEOUT_SECONDS,
+        )
+        started = perf_counter()
+        emitted = []
         try:
             stream = client.chat.completions.create(
                 model=settings.NVIDIA_MODEL,
@@ -200,14 +326,31 @@ def generate_stream(prompt: str, system: str = ""):
             for chunk in stream:
                 delta = chunk.choices[0].delta.content
                 if delta:
+                    emitted.append(delta)
                     yield delta
+            record_provider_call(
+                provider="nvidia",
+                model=settings.NVIDIA_MODEL,
+                prompt=prompt,
+                response="".join(emitted),
+                duration_ms=(perf_counter() - started) * 1000,
+                success=True,
+            )
             return
         except Exception as e:
+            record_provider_call(
+                provider="nvidia",
+                model=settings.NVIDIA_MODEL,
+                prompt=prompt,
+                response="".join(emitted),
+                duration_ms=(perf_counter() - started) * 1000,
+                success=False,
+            )
             logger.warning(f"NVIDIA stream failed ({e}), falling back to blocking generate")
 
     # Fallback: yield the full response as one chunk
     try:
-        yield generate(prompt, system)
+        yield generate(prompt, system, exclude={"nvidia"})
     except Exception as e:
         yield f"[Error generating response: {e}]"
 
@@ -226,4 +369,4 @@ def generate_json(prompt: str, system: str = "") -> dict:
         return json.loads(raw)
     except json.JSONDecodeError as e:
         logger.error(f"JSON parse failed: {e}\nRaw: {raw[:300]}")
-        raise ValueError(f"LLM returned invalid JSON: {e}")
+        raise ValueError(f"LLM returned invalid JSON: {e}") from e

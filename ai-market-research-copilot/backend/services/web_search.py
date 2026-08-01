@@ -1,4 +1,5 @@
-from typing import List, Dict
+from typing import Dict, List
+
 from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -13,7 +14,7 @@ def search_market_data(query: str, max_results: int = 5) -> List[Dict]:
     try:
         from ddgs import DDGS
         results = list(DDGS().text(query, max_results=max_results))
-        logger.info(f"Web search '{query[:60]}' → {len(results)} results")
+        logger.info("Web search '%s' returned %s results", query[:60], len(results))
         return results
     except Exception as e:
         logger.warning(f"Web search failed ({e}), proceeding without grounding")
@@ -38,7 +39,7 @@ def build_web_context(topic: str, section: str) -> str:
     if not results:
         return ""
 
-    lines = [f"=== REAL WEB DATA (use these facts, do not fabricate alternatives) ==="]
+    lines = ["=== REAL WEB DATA (use these facts, do not fabricate alternatives) ==="]
     for i, r in enumerate(results, 1):
         lines.append(f"[Source {i}] {r.get('title','')}")
         lines.append(r.get('body', '')[:300])

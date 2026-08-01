@@ -1,6 +1,34 @@
-# Environment
+# Environment and credentials
 .env
 *.env
+.env.*
+*.env.*
+!.env.example
+!*.env.example
+secrets/
+.secrets/
+credentials/
+.credentials/
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+*.keystore
+*.kdbx
+*.env.key
+*.env.enc
+*.secret.enc
+*_secret.*
+*_secrets.*
+*_credentials.*
+*credentials.json
+*service-account*.json
+token.json
+tokens.json
 
 # Python
 __pycache__/
@@ -30,6 +58,10 @@ reports/
 !data/db/.gitkeep
 !reports/.gitkeep
 
+# Keep curated evaluation fixtures
+!evals/
+!evals/*.json
+
 # IDE
 .vscode/
 .idea/
@@ -45,3 +77,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local installers and generated archives
+*.exe
+*.zip
+ui_template/
+Marketscope_UI_design.html

@@ -1,12 +1,13 @@
 import json
 import re
-from typing import Optional
+from collections.abc import Callable
 
+from backend.core.logging import get_logger
+
+from .llm import generate
 from .rag import rag_query
-from .llm import generate, generate_json
 from .vector_store import FAISSVectorStore
 from .web_search import build_web_context
-from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -202,18 +203,32 @@ Return ONLY the JSON object."""
 
 # ── Full Report ───────────────────────────────────────────────────────────────
 
-def generate_full_report(session_id: str, topic: str) -> dict:
+def generate_full_report(
+    session_id: str,
+    topic: str,
+    on_progress: Callable[[int, str], None] | None = None,
+) -> dict:
     """Orchestrate all research sections and return combined dict."""
     logger.info(f"[{session_id}] Generating full report for topic: {topic}")
     has_docs = _has_documents(session_id)
     data_source = "uploaded_documents" if has_docs else "web_search+llm"
     logger.info(f"[{session_id}] Data source: {data_source}")
 
+    def progress(value: int, stage: str) -> None:
+        if on_progress:
+            on_progress(value, stage)
+
+    progress(8, "Preparing sources")
     summary = generate_executive_summary(session_id, topic)
+    progress(24, "Executive summary complete")
     competitors = extract_competitors(session_id, topic)
+    progress(42, "Competitor analysis complete")
     pricing = extract_pricing_insights(session_id, topic)
+    progress(58, "Pricing analysis complete")
     trends = extract_market_trends(session_id, topic)
+    progress(74, "Trend analysis complete")
     swot = generate_swot(session_id, topic)
+    progress(88, "SWOT analysis complete")
 
     return {
         "executive_summary": summary,

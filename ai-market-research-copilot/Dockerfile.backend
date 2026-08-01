@@ -12,12 +12,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/ ./backend/
-COPY ui/ ./ui/
-COPY .env* ./
+RUN useradd --create-home --uid 10001 appuser
+
+COPY --chown=appuser:appuser backend/ ./backend/
+COPY --chown=appuser:appuser ui/ ./ui/
 
 # Create runtime directories
-RUN mkdir -p data/uploads data/indexes data/db reports
+RUN mkdir -p data/uploads data/indexes data/db reports \
+    && chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000
 

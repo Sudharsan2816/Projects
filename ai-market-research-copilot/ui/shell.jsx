@@ -36,7 +36,7 @@ const Icon = ({ name, size = 16 }) => {
   );
 };
 
-const Sidebar = ({ route, setRoute, docCount, hasReport, msgCount, reports, sessionId }) => {
+const Sidebar = ({ route, setRoute, docCount, hasReport, msgCount, reports, sessionId, health, onSelectReport }) => {
   const items = [
     { id: "dashboard", label: "Dashboard",  icon: "home" },
     { id: "upload",    label: "Upload",      icon: "upload",  count: docCount },
@@ -57,23 +57,25 @@ const Sidebar = ({ route, setRoute, docCount, hasReport, msgCount, reports, sess
 
       <div className="nav-section-label">Workspace</div>
       {items.map(it => (
-        <div
+        <button
           key={it.id}
+          type="button"
           className={`nav-item ${route === it.id ? "active" : ""}`}
           onClick={() => setRoute(it.id)}
+          aria-current={route === it.id ? "page" : undefined}
         >
           <Icon name={it.icon} />
           <span>{it.label}</span>
           {it.count != null && it.count > 0 && <span className="nav-count tnum">{it.count}</span>}
           {it.badge && <span className="nav-count" style={{ color: "var(--accent)" }}>{it.badge}</span>}
-        </div>
+        </button>
       ))}
 
       {reports && reports.length > 0 && (
         <>
           <div className="nav-section-label">Recent Reports</div>
-          {reports.slice(0, 3).map(r => (
-            <div key={r.id} className="nav-item" onClick={() => setRoute("report")}
+          {reports.filter(r => r.status === "done").slice(0, 3).map(r => (
+            <button key={r.id} type="button" className="nav-item recent-report" onClick={() => onSelectReport(r)}
                  style={{ paddingTop: 6, paddingBottom: 6 }}>
               <div className="col gap-4" style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, color: "var(--fg-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -83,7 +85,7 @@ const Sidebar = ({ route, setRoute, docCount, hasReport, msgCount, reports, sess
                   {API.relativeTime(r.created_at)}
                 </div>
               </div>
-            </div>
+            </button>
           ))}
         </>
       )}
@@ -92,8 +94,8 @@ const Sidebar = ({ route, setRoute, docCount, hasReport, msgCount, reports, sess
         <div className="session-label">Session</div>
         <div className="session-id">{sessionId || "…"}</div>
         <div className="session-pulse">
-          <span className="pulse-dot"></span>
-          Backend connected
+          <span className={`pulse-dot ${health ? "" : "offline"}`}></span>
+          {health ? "Backend connected" : "Backend unavailable"}
         </div>
       </div>
     </aside>
@@ -113,7 +115,11 @@ const TopBar = ({ crumbs, health }) => (
     <div className="topbar-actions">
       <div className="status-pill">
         <span className={`status-dot ${health === null ? "neg" : health === false ? "warn" : ""}`}></span>
-        {health === null ? "Backend offline" : health ? `${health.llm_provider || "LLM"} ready` : "Connecting…"}
+        {health === null
+          ? "Backend offline"
+          : health
+            ? `Online · ${(health.llm_provider || "LLM").toUpperCase()} selected`
+            : "Connecting"}
       </div>
     </div>
   </div>

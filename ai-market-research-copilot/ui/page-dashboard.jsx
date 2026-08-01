@@ -1,6 +1,6 @@
 /* Page: Dashboard */
 
-const Dashboard = ({ setRoute, docs, reports, health }) => {
+const Dashboard = ({ setRoute, setTopic, docs, reports, health }) => {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const totalChunks = docs.reduce((s, d) => s + (d.chunks || 0), 0);
   const doneReports = reports.filter(r => r.status === 'done');
@@ -49,7 +49,7 @@ const Dashboard = ({ setRoute, docs, reports, health }) => {
           </div>
           <div className="kpi-delta">
             <span className="status-dot" style={{ width: 6, height: 6, borderRadius: 999, background: health ? "var(--pos)" : "var(--neg)" }}></span>
-            {health ? `healthy · ${health.llm_provider || 'ready'}` : "offline"}
+            {health ? `configured · ${health.llm_provider || 'selected'}` : "offline"}
           </div>
         </div>
       </div>
@@ -98,13 +98,13 @@ const Dashboard = ({ setRoute, docs, reports, health }) => {
           <h2>Start a new insight session</h2>
           <span className="dim" style={{ fontSize: 12 }}>Define a market topic and generate a full report</span>
         </div>
-        <TopicLauncher setRoute={setRoute} />
+        <TopicLauncher setRoute={setRoute} setTopic={setTopic} />
       </div>
     </div>
   );
 };
 
-const TopicLauncher = ({ setRoute }) => {
+const TopicLauncher = ({ setRoute, setTopic }) => {
   const [val, setVal] = React.useState('');
   const suggestions = [
     "AI note-taking tools, SMB",
@@ -121,19 +121,27 @@ const TopicLauncher = ({ setRoute }) => {
           placeholder="e.g. AI note-taking tools — Global SMB market, 2026"
           value={val}
           onChange={e => setVal(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && val.trim() && setRoute('research')}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && val.trim()) {
+              setTopic(val.trim());
+              setRoute('research');
+            }
+          }}
         />
         <button
           className="btn btn-primary"
           style={{ padding: "12px 18px" }}
-          onClick={() => setRoute("research")}
+          onClick={() => {
+            if (val.trim()) setTopic(val.trim());
+            setRoute("research");
+          }}
         >
           Generate <Icon name="arrow" size={14} />
         </button>
       </div>
       <div className="row gap-8 mt-16" style={{ flexWrap: "wrap" }}>
         {suggestions.map(s => (
-          <span key={s} className="chip" onClick={() => setRoute("research")}>{s}</span>
+          <button key={s} type="button" className="chip" onClick={() => { setTopic(s); setRoute("research"); }}>{s}</button>
         ))}
       </div>
     </>

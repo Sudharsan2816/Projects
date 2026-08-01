@@ -19,10 +19,11 @@ The system operates on the **RAG (Retrieval-Augmented Generation)** principle:
 2.  **Chunking:** Large texts are broken into smaller "chunks" (approx. 500-1000 characters) with overlap to preserve context.
 3.  **Embedding:** Each chunk is converted into a numerical vector using a local embedding model (`all-MiniLM-L6-v2`).
 4.  **Vector Storage:** These vectors are stored in a FAISS index, enabling "semantic search" (finding text by meaning, not just keywords).
-5.  **Research Loop:**
+5.  **Research Job:**
     - The system identifies key research areas: Competitors, Pricing, Trends, and SWOT.
     - For each area, it queries the Vector DB for relevant context.
-    - It sends the retrieved context + a specialized prompt to a Large Language Model (LLM) like **Google Gemini 1.5 Flash**.
+    - It sends retrieved context plus a specialized prompt through the configured NVIDIA, Gemini, and Ollama fallback chain.
+    - The job persists its progress in SQLite and resumes polling after navigation or browser tab changes.
 6.  **Synthesis:** The LLM synthesizes the raw data into structured insights.
 7.  **Reporting:** Results are stored in a SQLite database and can be exported as a professional PDF.
 
@@ -39,10 +40,10 @@ The system operates on the **RAG (Retrieval-Augmented Generation)** principle:
     - `research_engine.py`: Orchestrates the multi-step research process.
 - `models/`: Database schemas (SQLAlchemy) and API data shapes (Pydantic).
 
-### Frontend (Streamlit)
-- `app.py`: The dashboard and entry point.
-- `pages/`: Multi-page navigation (Upload, Research, Report, Chat).
-- `components/`: UI styling and reusable widgets.
+### Frontend (React)
+- `ui/app.jsx`: Application state, report-job recovery, and navigation.
+- `ui/page-*.jsx`: Upload, research, report, and chat workspaces.
+- `ui/styles.css`: Responsive design tokens and accessible interaction states.
 
 ---
 
@@ -81,6 +82,6 @@ Use the **Chat** page to ask follow-up questions like *"What are the specific pr
 ---
 
 ## 6. Technical Requirements
-- **Python 3.9+**
-- **API Key:** A Google Gemini API Key (available for free at [Google AI Studio](https://aistudio.google.com/)).
+- **Python 3.11+**
+- **LLM:** A working NVIDIA or Gemini key, or a local Ollama service and model.
 - **Local Resources:** The embedding model and vector store run locally, requiring ~2GB of RAM.
