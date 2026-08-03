@@ -22,7 +22,5 @@ services:
         value: "true"
       - key: RATE_LIMIT_REQUESTS
         value: "30"
-      - key: API_AUTH_TOKEN
-        generateValue: true
       - key: NVIDIA_API_KEY
         sync: false
