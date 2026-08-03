@@ -15,6 +15,7 @@ function getSessionId() {
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
 
 const API_TOKEN_STORAGE_KEY = 'marketscope_api_token';
+let apiTokenPromptPromise = null;
 
 function getApiToken() {
   return sessionStorage.getItem(API_TOKEN_STORAGE_KEY) || '';
@@ -26,21 +27,39 @@ function authHeaders(headers = {}) {
 }
 
 function requestApiToken() {
-  const token = window.prompt('This deployment is private. Enter its access token:');
-  if (token && token.trim()) {
-    sessionStorage.setItem(API_TOKEN_STORAGE_KEY, token.trim());
-    return token.trim();
+  // Several protected requests run together during startup. Share one prompt so
+  // their simultaneous 401 responses do not ask for the same token repeatedly.
+  if (!apiTokenPromptPromise) {
+    apiTokenPromptPromise = Promise.resolve()
+      .then(() => window.prompt('This deployment is private. Enter its access token:'))
+      .then((token) => {
+        const normalized = (token || '').trim();
+        if (normalized) sessionStorage.setItem(API_TOKEN_STORAGE_KEY, normalized);
+        return normalized;
+      })
+      .finally(() => {
+        apiTokenPromptPromise = null;
+      });
   }
-  return '';
+  return apiTokenPromptPromise;
 }
 
 async function apiFetch(path, options = {}, retried = false) {
+  const tokenAtRequestStart = getApiToken();
   const response = await fetch(window.API_BASE + path, {
     ...options,
     headers: authHeaders(options.headers || {}),
   });
-  if (response.status === 401 && !retried && requestApiToken()) {
-    return apiFetch(path, options, true);
+  if (response.status === 401 && !retried) {
+    // Another concurrent request may already have collected the token while this
+    // request was in flight. Retry with it instead of displaying another prompt.
+    const currentToken = getApiToken();
+    if (currentToken && currentToken !== tokenAtRequestStart) {
+      return apiFetch(path, options, true);
+    }
+    if (await requestApiToken()) {
+      return apiFetch(path, options, true);
+    }
   }
   return response;
 }
@@ -182,8 +201,11 @@ async function uploadDocument(sessionId, file, onProgress) {
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(JSON.parse(xhr.responseText));
-      } else if (xhr.status === 401 && !retried && requestApiToken()) {
-        send(true).then(resolve, reject);
+      } else if (xhr.status === 401 && !retried) {
+        requestApiToken().then((token) => {
+          if (token) send(true).then(resolve, reject);
+          else reject(new Error('Valid API credentials are required'));
+        }, reject);
       } else {
         let msg = `Upload error ${xhr.status}`;
         try { msg = JSON.parse(xhr.responseText).detail || msg; } catch {}
