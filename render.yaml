@@ -4,7 +4,7 @@ services:
     runtime: docker
     plan: free
     region: singapore
-    branch: halucination_fixes
+    branch: agent/free-hosting
     rootDir: ai-market-research-copilot
     dockerfilePath: ./ai-market-research-copilot/Dockerfile.backend
     dockerContext: ./ai-market-research-copilot
