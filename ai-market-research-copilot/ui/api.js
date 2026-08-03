@@ -14,8 +14,39 @@ function getSessionId() {
 
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
 
+const API_TOKEN_STORAGE_KEY = 'marketscope_api_token';
+
+function getApiToken() {
+  return sessionStorage.getItem(API_TOKEN_STORAGE_KEY) || '';
+}
+
+function authHeaders(headers = {}) {
+  const token = getApiToken();
+  return token ? { ...headers, 'X-API-Key': token } : headers;
+}
+
+function requestApiToken() {
+  const token = window.prompt('This deployment is private. Enter its access token:');
+  if (token && token.trim()) {
+    sessionStorage.setItem(API_TOKEN_STORAGE_KEY, token.trim());
+    return token.trim();
+  }
+  return '';
+}
+
+async function apiFetch(path, options = {}, retried = false) {
+  const response = await fetch(window.API_BASE + path, {
+    ...options,
+    headers: authHeaders(options.headers || {}),
+  });
+  if (response.status === 401 && !retried && requestApiToken()) {
+    return apiFetch(path, options, true);
+  }
+  return response;
+}
+
 async function apiGet(path) {
-  const res = await fetch(window.API_BASE + path);
+  const res = await apiFetch(path);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || `API error ${res.status}`);
@@ -24,7 +55,7 @@ async function apiGet(path) {
 }
 
 async function apiPost(path, body) {
-  const res = await fetch(window.API_BASE + path, {
+  const res = await apiFetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -37,7 +68,7 @@ async function apiPost(path, body) {
 }
 
 async function apiDelete(path) {
-  const res = await fetch(window.API_BASE + path, { method: 'DELETE' });
+  const res = await apiFetch(path, { method: 'DELETE' });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json();
 }
@@ -142,13 +173,17 @@ async function uploadDocument(sessionId, file, onProgress) {
   fd.append('file', file);
   fd.append('session_id', sessionId);
 
-  return new Promise((resolve, reject) => {
+  const send = (retried = false) => new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', window.API_BASE + '/api/v1/upload/');
+    const token = getApiToken();
+    if (token) xhr.setRequestHeader('X-API-Key', token);
     if (onProgress) xhr.upload.onprogress = (e) => onProgress(e.loaded / e.total);
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(JSON.parse(xhr.responseText));
+      } else if (xhr.status === 401 && !retried && requestApiToken()) {
+        send(true).then(resolve, reject);
       } else {
         let msg = `Upload error ${xhr.status}`;
         try { msg = JSON.parse(xhr.responseText).detail || msg; } catch {}
@@ -158,6 +193,7 @@ async function uploadDocument(sessionId, file, onProgress) {
     xhr.onerror = () => reject(new Error('Network error during upload'));
     xhr.send(fd);
   });
+  return send();
 }
 
 async function deleteDocument(sessionId, docId) {
@@ -181,7 +217,7 @@ function reportDownloadUrl(sessionId, reportId) {
 }
 
 async function* chatStream(sessionId, message) {
-  const res = await fetch(window.API_BASE + '/api/v1/chat/stream', {
+  const res = await apiFetch('/api/v1/chat/stream', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId, message }),
