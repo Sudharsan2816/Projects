@@ -1,6 +1,6 @@
 # RAG Evaluation Report
 
-Generated: 2026-08-01T06:46:29.387213+00:00
+Generated: 2026-08-09T07:01:50.827584+00:00
 
 ## Summary
 
@@ -21,4 +21,4 @@ Generated: 2026-08-01T06:46:29.387213+00:00
 
 ## Methodology and limitations
 
-Retrieval uses the same local sentence-transformer family as the application and a labeled fixture corpus. The answer-level faithfulness score is a deterministic regression heuristic based on claim-token support; it does not replace human review or an independent model judge. Citation metrics use exact chunk IDs. Production evaluations should add real uploaded documents, adversarial questions, and provider-generated answers.
+Cosine similarity over the production nvidia embedding model (nvidia/nv-embedqa-e5-v5). The evaluation uses a labeled fixture corpus. The answer-level faithfulness score is a deterministic regression heuristic based on claim-token support; it does not replace human review or an independent model judge. Citation metrics use exact chunk IDs. Production evaluations should add real uploaded documents, adversarial questions, and provider-generated answers.

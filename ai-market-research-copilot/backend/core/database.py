@@ -30,6 +30,8 @@ def init_db():
 
     Base.metadata.create_all(bind=engine)
     _migrate_report_job_columns()
+    _migrate_chat_message_columns()
+    _migrate_document_brief_columns()
 
 
 def _migrate_report_job_columns() -> None:
@@ -43,9 +45,42 @@ def _migrate_report_job_columns() -> None:
         "progress": "INTEGER DEFAULT 0",
         "current_stage": "VARCHAR(80)",
         "error_message": "TEXT",
+        "source_document_ids": "TEXT",
+        "source_document_names": "TEXT",
         "updated_at": "DATETIME",
     }
     with engine.begin() as connection:
         for name, definition in additions.items():
             if name not in existing:
                 connection.execute(text(f"ALTER TABLE reports ADD COLUMN {name} {definition}"))
+
+
+def _migrate_chat_message_columns() -> None:
+    """Add chat metadata to existing SQLite databases without data loss."""
+    inspector = inspect(engine)
+    if "chat_messages" not in inspector.get_table_names():
+        return
+
+    existing = {column["name"] for column in inspector.get_columns("chat_messages")}
+    if "answer_mode" not in existing:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE chat_messages ADD COLUMN answer_mode VARCHAR(30)")
+            )
+
+
+def _migrate_document_brief_columns() -> None:
+    """Add persisted source brief fields to existing SQLite databases."""
+    inspector = inspect(engine)
+    if "documents" not in inspector.get_table_names():
+        return
+
+    existing = {column["name"] for column in inspector.get_columns("documents")}
+    additions = {
+        "brief": "TEXT",
+        "brief_status": "VARCHAR(20) DEFAULT 'pending'",
+    }
+    with engine.begin() as connection:
+        for name, definition in additions.items():
+            if name not in existing:
+                connection.execute(text(f"ALTER TABLE documents ADD COLUMN {name} {definition}"))

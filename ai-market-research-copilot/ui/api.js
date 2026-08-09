@@ -105,6 +105,8 @@ function normalizeDoc(d) {
     size,
     chunks: d.chunk_count || 0,
     indexed: ago,
+    brief: d.brief || '',
+    briefStatus: d.brief_status || (d.brief ? 'ready' : 'pending'),
   };
 }
 
@@ -153,6 +155,8 @@ function normalizeReport(r) {
     citations: [],
     createdAt: r.created_at,
     downloadReady: Boolean(r.download_ready),
+    sourceDocumentIds: r.source_document_ids || [],
+    sourceDocumentNames: r.source_document_names || [],
   };
 }
 
@@ -222,8 +226,16 @@ async function deleteDocument(sessionId, docId) {
   return apiDelete(`/api/v1/upload/${sessionId}/documents/${docId}`);
 }
 
-async function generateReport(sessionId, topic) {
-  return apiPost('/api/v1/research/generate', { session_id: sessionId, topic });
+async function generateDocumentBrief(sessionId, docId) {
+  return apiPost(`/api/v1/upload/${sessionId}/documents/${docId}/brief`, {});
+}
+
+async function generateReport(sessionId, topic, documentIds = []) {
+  return apiPost('/api/v1/research/generate', {
+    session_id: sessionId,
+    topic,
+    document_ids: documentIds,
+  });
 }
 
 async function getReport(sessionId, reportId) {
@@ -234,8 +246,25 @@ async function listReports(sessionId) {
   return apiGet(`/api/v1/research/${sessionId}/reports`);
 }
 
-function reportDownloadUrl(sessionId, reportId) {
-  return `${window.API_BASE}/api/v1/report/${encodeURIComponent(sessionId)}/${reportId}/download`;
+async function downloadReport(sessionId, reportId) {
+  const path = `/api/v1/report/${encodeURIComponent(sessionId)}/${reportId}/download`;
+  const response = await apiFetch(path);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || `Download error ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const disposition = response.headers.get('Content-Disposition') || '';
+  const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = filenameMatch ? filenameMatch[1] : `market-research-${reportId}.pdf`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(objectUrl);
 }
 
 async function* chatStream(sessionId, message) {
@@ -277,10 +306,11 @@ window.API = {
   listDocuments,
   uploadDocument,
   deleteDocument,
+  generateDocumentBrief,
   generateReport,
   getReport,
   listReports,
-  reportDownloadUrl,
+  downloadReport,
   chatStream,
   getChatHistory,
   clearChatHistory,

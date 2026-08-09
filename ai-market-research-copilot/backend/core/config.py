@@ -51,6 +51,8 @@ class Settings(BaseSettings):
     RERANKER_FETCH_K: int = 20  # candidates fetched from FAISS before reranking
     CHAT_HISTORY_DB_LIMIT: int = 20
     CHAT_HISTORY_CONTEXT_LIMIT: int = 6
+    CHAT_DOCUMENT_RELEVANCE_THRESHOLD: float = 0.35
+    CHAT_MAX_OUTPUT_TOKENS: int = 900
 
     # Paths
     UPLOAD_DIR: Path = BASE_DIR / "data" / "uploads"

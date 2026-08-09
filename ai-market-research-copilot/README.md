@@ -7,13 +7,15 @@ This is the strongest AI/backend project in this portfolio because it combines A
 ## What It Does
 
 - Upload and parse PDF, CSV, TXT, and Markdown files.
+- Generate a persisted, document-grounded source brief immediately after indexing.
 - Split documents into chunks and create embeddings.
 - Store per-session vectors in FAISS.
 - Generate market research sections: executive summary, competitors, pricing, trends, and SWOT.
-- Support RAG chat over uploaded documents with cited source snippets.
+- Support cited RAG chat over uploaded documents plus labeled general market-research guidance.
+- Combine thresholded dense retrieval with exact-term fallback for report facts and follow-up questions.
 - Generate PDF reports with ReportLab.
 - Run one canonical React workspace from the FastAPI service on port 8000.
-- Refuse to answer from general model knowledge when no indexed document context is available.
+- Refuse unrelated questions while allowing in-scope market-research questions to use clearly labeled general model knowledge when document context is unavailable or weak.
 
 ## Architecture
 
@@ -51,7 +53,7 @@ User
 | `GET` | `/api/v1/research/{session_id}/reports` | List reports for a session |
 | `GET` | `/api/v1/research/{session_id}/reports/{report_id}` | Fetch report data |
 | `GET` | `/api/v1/report/{session_id}/{report_id}/download` | Download a session-scoped PDF |
-| `POST` | `/api/v1/chat/` | Ask questions over indexed documents |
+| `POST` | `/api/v1/chat/` | Ask cited document questions or in-scope general market-research questions |
 | `GET` | `/health` | Service health and configuration summary |
 
 ## Run Locally
@@ -142,7 +144,8 @@ Current focused coverage includes:
 - In-memory rate limiter blocks clients after configured capacity.
 - Upload filenames and session IDs are path-safe.
 - Chunking preserves source metadata.
-- RAG does not call the LLM when no indexed context is retrieved.
+- Strict RAG does not call the LLM when no indexed context is retrieved.
+- Hybrid chat uses general knowledge only for market-research questions and refuses unrelated prompts.
 - RAG retrieval metric helpers compute recall@k and hit@k.
 
 ## RAG Evaluation

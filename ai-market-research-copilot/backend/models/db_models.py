@@ -31,6 +31,8 @@ class Document(Base):
     file_size_kb = Column(Float, nullable=True)
     chunk_count = Column(Integer, default=0)
     indexed = Column(Boolean, default=False)
+    brief = Column(Text, nullable=True)
+    brief_status = Column(String(20), default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     session = relationship("Session", back_populates="documents")
@@ -52,6 +54,8 @@ class Report(Base):
     progress = Column(Integer, default=0)
     current_stage = Column(String(80), nullable=True)
     error_message = Column(Text, nullable=True)
+    source_document_ids = Column(Text, nullable=True)    # JSON list of document ids
+    source_document_names = Column(Text, nullable=True)  # JSON list of persisted filenames
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -66,6 +70,7 @@ class ChatMessage(Base):
     role = Column(String(10), nullable=False)   # "user" or "assistant"
     content = Column(Text, nullable=False)
     sources = Column(Text, nullable=True)       # JSON: list of source citations
+    answer_mode = Column(String(30), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     session = relationship("Session", back_populates="chat_messages")

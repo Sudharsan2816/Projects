@@ -1,0 +1,133 @@
+{
+  "run_date": "2026-08-09",
+  "endpoint": "POST /api/v1/chat/",
+  "session_id": "9cc2de2c-7629-488d-b3f7-069dc62a4001",
+  "source": "market_research_test_sample.pdf",
+  "provider": "nvidia",
+  "automated_tests": {
+    "passed": 86,
+    "failed": 0
+  },
+  "summary": {
+    "graded_cases": 10,
+    "passed": 10,
+    "failed": 0,
+    "pass_rate": 1.0,
+    "median_duration_ms": 4536,
+    "mean_duration_ms": 10065,
+    "max_duration_ms": 49933
+  },
+  "cases": [
+    {
+      "id": "PF-01",
+      "category": "unrelated_knowledge",
+      "question": "What is the capital of France?",
+      "observed": "Verified report-irrelevant response; no answer invented",
+      "answer_mode": "report_irrelevant",
+      "source_count": 0,
+      "duration_ms": 2464,
+      "result": "pass"
+    },
+    {
+      "id": "PF-02",
+      "category": "current_turn_isolation",
+      "question": "What is Tesla's 2026 market share?",
+      "setup": "Immediately followed the France question",
+      "observed": "Not covered; did not repeat or answer the France question",
+      "answer_mode": "report_irrelevant",
+      "source_count": 0,
+      "duration_ms": 12999,
+      "result": "pass"
+    },
+    {
+      "id": "PF-03",
+      "category": "misspelled_entity",
+      "question": "Tell me about Krishikub",
+      "observed": "Resolved to the report-backed KrishiKube spelling; correct profile",
+      "answer_mode": "documents",
+      "source_count": 3,
+      "duration_ms": 49933,
+      "result": "pass_with_latency_warning"
+    },
+    {
+      "id": "PF-04",
+      "category": "entity_profile",
+      "question": "Tell me about KrishiKube",
+      "observed": "Correct share, growth, founders, price, cost advantage, weakness, and projection",
+      "answer_mode": "documents",
+      "source_count": 3,
+      "duration_ms": 11413,
+      "result": "pass"
+    },
+    {
+      "id": "PF-05",
+      "category": "pronoun_follow_up",
+      "question": "What are its weaknesses?",
+      "setup": "Tell me about KrishiKube",
+      "observed": "Resolved 'its' to KrishiKube; returned app, firmware, and 4.1-star evidence",
+      "answer_mode": "documents",
+      "source_count": 1,
+      "duration_ms": 3254,
+      "result": "pass"
+    },
+    {
+      "id": "PF-06",
+      "category": "direct_fact",
+      "question": "Who founded SproutNest?",
+      "observed": "Aravind Menon in 2021",
+      "answer_mode": "documents",
+      "source_count": 2,
+      "duration_ms": 4145,
+      "result": "pass"
+    },
+    {
+      "id": "PF-07",
+      "category": "exact_price",
+      "question": "What is the price of SproutNest Halo X2?",
+      "observed": "₹18,499, mid-premium, 24-month warranty",
+      "answer_mode": "documents",
+      "source_count": 2,
+      "duration_ms": 7143,
+      "result": "pass"
+    },
+    {
+      "id": "PF-08",
+      "category": "unknown_entity_safety",
+      "question": "Tell me about Farmlantic",
+      "observed": "Unknown name was not fuzzy-mapped to a report entity",
+      "answer_mode": "report_irrelevant",
+      "source_count": 0,
+      "duration_ms": 401,
+      "result": "pass"
+    },
+    {
+      "id": "PF-09",
+      "category": "missing_metric_safety",
+      "question": "What is SproutNest's net profit margin?",
+      "observed": "Not covered; correctly distinguished the available 58% gross margin",
+      "answer_mode": "report_irrelevant",
+      "source_count": 0,
+      "duration_ms": 3976,
+      "result": "pass"
+    },
+    {
+      "id": "PF-10",
+      "category": "pdf_currency_normalization",
+      "question": "What price point does the report identify as an opportunity?",
+      "observed": "Correctly returned sub-₹6,000 and the 44% price-barrier evidence",
+      "answer_mode": "documents",
+      "source_count": 3,
+      "duration_ms": 4926,
+      "result": "pass"
+    }
+  ],
+  "reliability_probes": [
+    {
+      "category": "broad_summary_provider_latency",
+      "question": "Summarize the uploaded document",
+      "duration_ms": 120172,
+      "result": "client_timeout",
+      "notes": "No answer was returned. A focused post-fix query verified the corrected ₹6,000 source figure; upstream NVIDIA latency remains variable."
+    }
+  ]
+}

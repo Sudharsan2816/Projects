@@ -54,7 +54,11 @@ def _observed_generate(
 
 # ── Gemini (lazy import — only used when LLM_PROVIDER=gemini) ────────────────
 
-def _gemini_generate(prompt: str, system: str = "") -> str:
+def _gemini_generate(
+    prompt: str,
+    system: str = "",
+    max_output_tokens: int | None = None,
+) -> str:
     try:
         from google import genai
         from google.genai import types
@@ -67,7 +71,7 @@ def _gemini_generate(prompt: str, system: str = "") -> str:
         config=types.GenerateContentConfig(
             system_instruction=system or "You are an expert market research analyst.",
             temperature=0.4,
-            max_output_tokens=settings.LLM_MAX_OUTPUT_TOKENS,
+            max_output_tokens=max_output_tokens or settings.LLM_MAX_OUTPUT_TOKENS,
         ),
     )
     if not response.text:
@@ -77,7 +81,11 @@ def _gemini_generate(prompt: str, system: str = "") -> str:
 
 # ── NVIDIA NIM (OpenAI-compatible) ───────────────────────────────────────────
 
-def _nvidia_generate(prompt: str, system: str = "") -> str:
+def _nvidia_generate(
+    prompt: str,
+    system: str = "",
+    max_output_tokens: int | None = None,
+) -> str:
     client = OpenAI(
         base_url=settings.NVIDIA_BASE_URL,
         api_key=settings.NVIDIA_API_KEY,
@@ -90,7 +98,7 @@ def _nvidia_generate(prompt: str, system: str = "") -> str:
             {"role": "user", "content": prompt},
         ],
         temperature=0.4,
-        max_tokens=settings.LLM_MAX_OUTPUT_TOKENS,
+        max_tokens=max_output_tokens or settings.LLM_MAX_OUTPUT_TOKENS,
     )
     content = response.choices[0].message.content
     if not content:
@@ -100,13 +108,20 @@ def _nvidia_generate(prompt: str, system: str = "") -> str:
 
 # ── Ollama ────────────────────────────────────────────────────────────────────
 
-def _ollama_generate(prompt: str, system: str = "") -> str:
+def _ollama_generate(
+    prompt: str,
+    system: str = "",
+    max_output_tokens: int | None = None,
+) -> str:
     payload = {
         "model": settings.OLLAMA_MODEL,
         "prompt": prompt,
         "system": system or "You are an expert market research analyst.",
         "stream": False,
-        "options": {"temperature": 0.4, "num_predict": settings.LLM_MAX_OUTPUT_TOKENS},
+        "options": {
+            "temperature": 0.4,
+            "num_predict": max_output_tokens or settings.LLM_MAX_OUTPUT_TOKENS,
+        },
     }
     try:
         response = httpx.post(
@@ -160,11 +175,16 @@ def _provider_order(exclude: set[str] | None = None) -> list[str]:
     return order
 
 
-def _call_provider(provider: str, prompt: str, system: str) -> str:
+def _call_provider(
+    provider: str,
+    prompt: str,
+    system: str,
+    max_output_tokens: int | None = None,
+) -> str:
     operations = {
-        "nvidia": lambda: _nvidia_generate(prompt, system),
-        "gemini": lambda: _gemini_generate(prompt, system),
-        "ollama": lambda: _ollama_generate(prompt, system),
+        "nvidia": lambda: _nvidia_generate(prompt, system, max_output_tokens),
+        "gemini": lambda: _gemini_generate(prompt, system, max_output_tokens),
+        "ollama": lambda: _ollama_generate(prompt, system, max_output_tokens),
     }
     logger.info("Calling %s provider (%s)", provider, _provider_model(provider))
     return _observed_generate(
@@ -198,7 +218,12 @@ def _safe_provider_error(error: Exception) -> str:
     return "provider request failed"
 
 
-def generate(prompt: str, system: str = "", exclude: set[str] | None = None) -> str:
+def generate(
+    prompt: str,
+    system: str = "",
+    exclude: set[str] | None = None,
+    max_output_tokens: int | None = None,
+) -> str:
     diagnostics: dict[str, str] = {}
     providers = _provider_order(exclude)
     if not providers:
@@ -206,7 +231,9 @@ def generate(prompt: str, system: str = "", exclude: set[str] | None = None) -> 
 
     for provider in providers:
         try:
-            return _call_provider(provider, prompt, system)
+            if max_output_tokens is None:
+                return _call_provider(provider, prompt, system)
+            return _call_provider(provider, prompt, system, max_output_tokens)
         except Exception as error:
             reason = _safe_provider_error(error)
             diagnostics[provider] = reason
@@ -303,7 +330,11 @@ def rerank(
 
 # ── NVIDIA streaming generate ─────────────────────────────────────────────────
 
-def generate_stream(prompt: str, system: str = ""):
+def generate_stream(
+    prompt: str,
+    system: str = "",
+    max_output_tokens: int | None = None,
+):
     """
     Yields text chunks for streaming. Only supported for NVIDIA provider.
     Falls back to yielding the full generate() result as one chunk.
@@ -325,10 +356,12 @@ def generate_stream(prompt: str, system: str = ""):
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.4,
-                max_tokens=settings.LLM_MAX_OUTPUT_TOKENS,
+                max_tokens=max_output_tokens or settings.LLM_MAX_OUTPUT_TOKENS,
                 stream=True,
             )
             for chunk in stream:
+                if not chunk.choices:
+                    continue
                 delta = chunk.choices[0].delta.content
                 if delta:
                     emitted.append(delta)
@@ -355,7 +388,12 @@ def generate_stream(prompt: str, system: str = ""):
 
     # Fallback: yield the full response as one chunk
     try:
-        yield generate(prompt, system, exclude={"nvidia"})
+        yield generate(
+            prompt,
+            system,
+            exclude={"nvidia"},
+            max_output_tokens=max_output_tokens,
+        )
     except Exception as e:
         yield f"[Error generating response: {e}]"
 
