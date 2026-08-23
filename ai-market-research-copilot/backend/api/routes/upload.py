@@ -1,3 +1,4 @@
+import shutil
 import uuid
 from pathlib import Path
 
@@ -25,10 +26,38 @@ ALLOWED_EXTENSIONS = {".pdf", ".csv", ".txt", ".md"}
 MAX_BYTES = settings.MAX_FILE_SIZE_MB * 1024 * 1024
 
 
+def _reset_session_data(session_id: str, db: Session) -> None:
+    """Clear one explicitly selected session before a fresh upload batch."""
+    FAISSVectorStore(session_id).delete()
+
+    existing_session = (
+        db.query(DBSession).filter(DBSession.session_id == session_id).first()
+    )
+    if existing_session:
+        db.delete(existing_session)
+        db.commit()
+
+    upload_root = settings.UPLOAD_DIR.resolve()
+    session_upload_dir = (settings.UPLOAD_DIR / session_id).resolve()
+    if session_upload_dir.parent != upload_root:
+        raise RuntimeError("Refusing to reset an upload directory outside UPLOAD_DIR")
+    if session_upload_dir.exists():
+        shutil.rmtree(session_upload_dir)
+
+    logger.info(
+        "session_data_reset",
+        extra={
+            "event": "session_data_reset",
+            "session_id": session_id,
+        },
+    )
+
+
 @router.post("/", response_model=UploadResponse)
 async def upload_file(
     file: UploadFile = File(...),
     session_id: str = Form(None),
+    reset_session: bool = Form(False),
     db: Session = Depends(get_db),
 ):
     # Validate extension
@@ -52,6 +81,9 @@ async def upload_file(
     if not session_id:
         session_id = str(uuid.uuid4())
     session_id = normalize_session_id(session_id)
+
+    if reset_session:
+        _reset_session_data(session_id, db)
 
     db_session = db.query(DBSession).filter(DBSession.session_id == session_id).first()
     if not db_session:
@@ -77,6 +109,20 @@ async def upload_file(
 
         store = FAISSVectorStore(session_id)
         total_vectors = store.add_chunks(chunks)
+        indexed_sources = sorted(
+            {str(chunk.get("source", "unknown")) for chunk in store.metadata}
+        )
+        logger.info(
+            "session_index_built",
+            extra={
+                "event": "session_index_built",
+                "session_id": session_id,
+                "vector_count": total_vectors,
+                "source_count": len(indexed_sources),
+                "sources": indexed_sources,
+                "reset_session": reset_session,
+            },
+        )
 
         brief = None
         brief_status = "unavailable"

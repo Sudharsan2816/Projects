@@ -193,7 +193,7 @@ def test_generic_summary_request_without_documents_is_not_scope_guarded(monkeypa
     assert mode == "documents"
 
 
-def test_fact_retrieval_embeds_only_current_question_not_conversation_history(monkeypatch):
+def test_history_aware_rewrite_supplies_a_standalone_retrieval_query(monkeypatch):
     captured = {}
     results = [
         (
@@ -211,6 +211,11 @@ def test_fact_retrieval_embeds_only_current_question_not_conversation_history(mo
         return results
 
     monkeypatch.setattr(chat_engine, "retrieve_results", fake_retrieve)
+    monkeypatch.setattr(
+        chat_engine,
+        "generate_with_provider",
+        lambda provider, prompt, system, **kwargs: "Who founded SproutNest?",
+    )
     monkeypatch.setattr(
         chat_engine,
         "answer_from_results",
@@ -250,6 +255,11 @@ def test_document_answer_prompt_receives_only_current_turn(monkeypatch):
         )
     ]
     monkeypatch.setattr(chat_engine, "retrieve_results", lambda **kwargs: results)
+    monkeypatch.setattr(
+        chat_engine,
+        "generate_with_provider",
+        lambda provider, prompt, system, **kwargs: "What is Tesla's 2026 market share?",
+    )
     monkeypatch.setattr(
         chat_engine,
         "correct_document_entity_typos",
@@ -316,6 +326,11 @@ def test_pronoun_follow_up_is_rewritten_with_report_backed_entity(monkeypatch):
 
     monkeypatch.setattr(chat_engine, "retrieve_results", fake_retrieve)
     monkeypatch.setattr(chat_engine, "answer_from_results", fake_answer)
+    monkeypatch.setattr(
+        chat_engine,
+        "generate_with_provider",
+        lambda provider, prompt, system, **kwargs: "What are KrishiKube's weaknesses?",
+    )
 
     answer, sources, mode = chat_engine.chat(
         "session",
@@ -329,6 +344,86 @@ def test_pronoun_follow_up_is_rewritten_with_report_backed_entity(monkeypatch):
     assert captured["retrieval_query"] == "What are KrishiKube's weaknesses?"
     assert captured["answer_query"] == "What are KrishiKube's weaknesses?"
     assert "Tell me about" not in captured["retrieval_query"]
+
+
+def test_clarification_turn_is_rewritten_before_stream_retrieval(monkeypatch):
+    captured = {}
+    results = [
+        (
+            {
+                "source": "pricing.pdf",
+                "text": "Nimbus starts at $19 while Corvex starts at $29.",
+                "chunk_index": 3,
+            },
+            0.91,
+        )
+    ]
+
+    def fake_rewrite(provider, prompt, system, **kwargs):
+        captured["provider"] = provider
+        captured["rewrite_prompt"] = prompt
+        captured["rewrite_system"] = system
+        captured["rewrite_max_tokens"] = kwargs["max_output_tokens"]
+        return "Compare entry pricing of Nimbus vs Corvex"
+
+    def fake_retrieve(**kwargs):
+        captured["retrieval_query"] = kwargs["query"]
+        return results
+
+    def fake_info(message, *args, **kwargs):
+        if message == "history_aware_query_rewrite":
+            captured["rewrite_log"] = kwargs["extra"]
+
+    monkeypatch.setattr(chat_engine, "generate_with_provider", fake_rewrite)
+    monkeypatch.setattr(chat_engine, "retrieve_results", fake_retrieve)
+    monkeypatch.setattr(chat_engine.logger, "info", fake_info)
+    monkeypatch.setattr(
+        chat_engine,
+        "generate_stream",
+        lambda prompt, system, **kwargs: iter(["Nimbus is cheaper than Corvex."]),
+    )
+
+    history = [
+        {"role": "user", "content": "Compare entry pricing A vs B"},
+        {"role": "assistant", "content": "Which companies do A and B represent?"},
+    ]
+    events = list(
+        chat_engine.chat_stream(
+            "session",
+            "A is Nimbus B is Corvex",
+            history=history,
+        )
+    )
+
+    assert captured["provider"] == "gemini"
+    assert "Compare entry pricing A vs B" in captured["rewrite_prompt"]
+    assert "A is Nimbus B is Corvex" in captured["rewrite_prompt"]
+    assert captured["retrieval_query"] == "Compare entry pricing of Nimbus vs Corvex"
+    assert captured["rewrite_max_tokens"] == 120
+    assert captured["rewrite_log"]["original_message"] == "A is Nimbus B is Corvex"
+    assert captured["rewrite_log"]["rewritten_query"] == (
+        "Compare entry pricing of Nimbus vs Corvex"
+    )
+    assert events[-1][2] == "documents"
+
+
+def test_first_turn_does_not_call_query_rewriter(monkeypatch):
+    captured = {}
+
+    def fail_rewrite(*args, **kwargs):
+        raise AssertionError("Turn one must not call the history-aware query rewriter")
+
+    def fake_retrieve(**kwargs):
+        captured.update(kwargs)
+        return []
+
+    monkeypatch.setattr(chat_engine, "generate_with_provider", fail_rewrite)
+    monkeypatch.setattr(chat_engine, "retrieve_results", fake_retrieve)
+    monkeypatch.setattr(chat_engine, "has_indexed_documents", lambda session_id: True)
+
+    chat_engine.chat("session", "Compare entry pricing of Nimbus vs Corvex")
+
+    assert captured["query"] == "Compare entry pricing of Nimbus vs Corvex"
 
 
 def test_empty_report_retrieval_returns_verified_report_miss(monkeypatch):

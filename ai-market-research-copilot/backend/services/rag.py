@@ -74,6 +74,17 @@ _LEXICAL_STOP_WORDS = {
 
 
 def _normalize_lexical_token(token: str) -> str:
+    comparative_forms = {
+        "better": "good",
+        "cheaper": "cheap",
+        "higher": "high",
+        "lower": "low",
+        "stronger": "strong",
+        "weaker": "weak",
+        "worse": "bad",
+    }
+    if token in comparative_forms:
+        return comparative_forms[token]
     if token in {"founder", "founded", "founding"}:
         return "found"
     if len(token) > 4 and token.endswith("ies"):
@@ -215,6 +226,17 @@ def _chunk_key(chunk: Dict[str, Any]) -> tuple[Any, ...]:
     )
 
 
+_COMPARATIVE_QUERY_PATTERN = re.compile(
+    r"\b(?:compare|comparison|versus|vs\.?|stronger|weaker|better|worse|"
+    r"cheaper|costlier|higher|lower|which (?:one|company|product|brand))\b",
+    flags=re.IGNORECASE,
+)
+
+
+def _is_comparative_query(query: str) -> bool:
+    return bool(_COMPARATIVE_QUERY_PATTERN.search(query))
+
+
 def has_indexed_documents(
     session_id: str,
     source_filenames: List[str] | None = None,
@@ -243,6 +265,22 @@ def build_context(
     return "\n\n---\n\n".join(parts)
 
 
+def _retrieval_debug_chunks(
+    results: List[Tuple[Dict[str, Any], float]],
+) -> List[Dict[str, Any]]:
+    """Build a compact, structured representation for retrieval debugging."""
+    return [
+        {
+            "source_filename": chunk.get("source", "unknown"),
+            "page": chunk.get("page"),
+            "chunk_index": chunk.get("chunk_index"),
+            "snippet": re.sub(r"\s+", " ", str(chunk.get("text", ""))).strip()[:150],
+            "score": round(float(score), 6),
+        }
+        for chunk, score in results
+    ]
+
+
 def retrieve_results(
     session_id: str,
     query: str,
@@ -255,13 +293,42 @@ def retrieve_results(
     """Retrieve, optionally threshold, and rerank document chunks."""
     store = FAISSVectorStore(session_id)
     fetch_k = max(settings.RERANKER_FETCH_K, top_k or settings.TOP_K_RESULTS)
+    comparative_query = _is_comparative_query(query)
     retrieval_started = perf_counter()
-    results = store.search(
-        query,
-        top_k=fetch_k,
-        source_filenames=source_filenames,
-    )
+    search_kwargs: Dict[str, Any] = {
+        "top_k": fetch_k,
+        "source_filenames": source_filenames,
+    }
+    if comparative_query:
+        search_kwargs["diversify_sources"] = True
+    results = store.search(query, **search_kwargs)
     candidate_count = len(results)
+    thresholded_results = (
+        [item for item in results if item[1] >= minimum_score]
+        if minimum_score is not None
+        else results
+    )
+    if settings.DEBUG:
+        logger.debug(
+            "retrieval_after_faiss",
+            extra={
+                "event": "retrieval_after_faiss",
+                "session_id": store.session_id,
+                "query": query,
+                "faiss_fetch_k": fetch_k,
+                "faiss_returned": candidate_count,
+                "minimum_score": minimum_score,
+                "threshold_cleared": len(thresholded_results),
+                "threshold_policy": (
+                    "diagnostic_only_comparative_query"
+                    if comparative_query
+                    else "pre_rerank_filter"
+                ),
+                "source_diversification": comparative_query,
+                "score_kind": "cosine_similarity",
+                "chunks": _retrieval_debug_chunks(results),
+            },
+        )
 
     if diagnostic_path == "follow_up_chat":
         index_size = store.index.ntotal if store.index is not None else 0
@@ -275,8 +342,9 @@ def retrieve_results(
             top_scores,
         )
 
-    if minimum_score is not None:
-        results = [item for item in results if item[1] >= minimum_score]
+    # Comparative questions need evidence from multiple sources. Do not discard
+    # their candidates on the embedding threshold before the reranker can compare them.
+    results = results if comparative_query else thresholded_results
 
     if use_lexical_fallback:
         selected_sources = set(source_filenames or [])
@@ -298,8 +366,26 @@ def retrieve_results(
                 merged[key] = (chunk, score)
         results = sorted(merged.values(), key=lambda item: item[1], reverse=True)
 
+    rerank_input_count = len(results)
     if results:
         results = rerank(query, results, top_k=top_k or settings.TOP_K_RESULTS)
+
+    if settings.DEBUG:
+        logger.debug(
+            "retrieval_after_rerank",
+            extra={
+                "event": "retrieval_after_rerank",
+                "session_id": store.session_id,
+                "query": query,
+                "rerank_input_count": rerank_input_count,
+                "rerank_returned": len(results),
+                "final_top_k": top_k or settings.TOP_K_RESULTS,
+                "score_kind": (
+                    "reranker_logit_if_available_otherwise_retrieval_score"
+                ),
+                "chunks": _retrieval_debug_chunks(results),
+            },
+        )
 
     record_retrieval_trace(
         session_id=session_id,

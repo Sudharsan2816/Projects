@@ -242,6 +242,27 @@ def generate(
     raise LLMProviderError(diagnostics)
 
 
+def generate_with_provider(
+    provider: str,
+    prompt: str,
+    system: str = "",
+    max_output_tokens: int | None = None,
+) -> str:
+    """Call one explicitly selected provider without applying provider fallback."""
+    provider = provider.lower().strip()
+    if provider not in {"nvidia", "gemini", "ollama"}:
+        raise ValueError(f"Unsupported provider: {provider}")
+    if not _provider_is_configured(provider):
+        raise LLMProviderError({provider: "provider is not configured"})
+
+    try:
+        return _call_provider(provider, prompt, system, max_output_tokens)
+    except Exception as error:
+        reason = _safe_provider_error(error)
+        logger.warning("%s provider failed: %s", provider, reason)
+        raise LLMProviderError({provider: reason}) from error
+
+
 def check_provider(provider: str) -> dict[str, Any]:
     """Run a minimal provider-specific prompt and return secret-free diagnostics."""
     provider = provider.lower().strip()

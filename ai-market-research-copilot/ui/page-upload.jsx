@@ -4,6 +4,7 @@ const PageUpload = ({
   sessionId,
   docs,
   refreshDocs,
+  startFreshSession,
   setRoute,
   onPrepareReport,
 }) => {
@@ -38,13 +39,19 @@ const PageUpload = ({
     const total = pending.length;
     let done = 0;
     const readyDocuments = [];
+    const uploadSessionId = startFreshSession();
 
-    for (const file of pending) {
+    for (const [fileIndex, file] of pending.entries()) {
       try {
-        const uploaded = await API.uploadDocument(sessionId, file, p => {
-          setProgress(((done + p) / total) * 100);
-          if (p >= 1) setUploadPhase("Creating source brief");
-        });
+        const uploaded = await API.uploadDocument(
+          uploadSessionId,
+          file,
+          p => {
+            setProgress(((done + p) / total) * 100);
+            if (p >= 1) setUploadPhase("Creating source brief");
+          },
+          fileIndex === 0,
+        );
         readyDocuments.push({ id: uploaded.document_id, name: uploaded.filename });
         done += 1;
         setProgress((done / total) * 100);
@@ -59,7 +66,7 @@ const PageUpload = ({
     setUploading(false);
     setProgress(0);
     setUploadPhase("");
-    await refreshDocs();
+    await refreshDocs(uploadSessionId);
     if (readyDocuments.length > 0) setReportPrompt(readyDocuments);
   };
 

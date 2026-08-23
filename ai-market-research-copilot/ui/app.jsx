@@ -13,7 +13,7 @@ const REPORT_STEPS = [
 ];
 
 const App = () => {
-  const [sessionId] = useState(() => API.getSessionId());
+  const [sessionId, setSessionId] = useState(() => API.getSessionId());
   const [route, setRoute] = useState("dashboard");
 
   const [docs, setDocs] = useState([]);
@@ -123,9 +123,9 @@ const App = () => {
     };
   }, [activeReportId, mergeReport, sessionId]);
 
-  const refreshDocs = useCallback(async () => {
+  const refreshDocs = useCallback(async (targetSessionId = sessionId) => {
     try {
-      const documentData = await API.listDocuments(sessionId);
+      const documentData = await API.listDocuments(targetSessionId);
       setDocs(documentData);
       const availableIds = new Set(documentData.map((document) => document.id));
       setSelectedDocumentIds((current) => current.filter((id) => availableIds.has(id)));
@@ -134,6 +134,22 @@ const App = () => {
       return [];
     }
   }, [sessionId]);
+
+  const startFreshSession = useCallback(() => {
+    const nextSessionId = API.startSession();
+    setSessionId(nextSessionId);
+    setDocs([]);
+    setSelectedDocumentIds([]);
+    setReports([]);
+    setReport(null);
+    setMessages([]);
+    setTopic("");
+    setActiveReportId(null);
+    setJobProgress(0);
+    setJobStage("");
+    setGenerationError("");
+    return nextSessionId;
+  }, []);
 
   const prepareReportFromDocuments = useCallback((documentIds, documentNames = []) => {
     const selectedIds = [...new Set(documentIds)];
@@ -231,6 +247,7 @@ const App = () => {
               sessionId={sessionId}
               docs={docs}
               refreshDocs={refreshDocs}
+              startFreshSession={startFreshSession}
               setRoute={setRoute}
               onPrepareReport={prepareReportFromDocuments}
             />

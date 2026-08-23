@@ -2,14 +2,19 @@
 
 // ── Session management ────────────────────────────────────────────────────────
 
-function getSessionId() {
-  let id = localStorage.getItem('marketscope_session');
-  if (!id) {
-    id = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
-    localStorage.setItem('marketscope_session', id);
-  }
+function createSessionId() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+}
+
+function startSession() {
+  const id = createSessionId();
+  localStorage.setItem('marketscope_session', id);
   return id;
+}
+
+function getSessionId() {
+  return localStorage.getItem('marketscope_session') || startSession();
 }
 
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
@@ -191,10 +196,11 @@ async function listDocuments(sessionId) {
   return data.map(normalizeDoc);
 }
 
-async function uploadDocument(sessionId, file, onProgress) {
+async function uploadDocument(sessionId, file, onProgress, resetSession = false) {
   const fd = new FormData();
   fd.append('file', file);
   fd.append('session_id', sessionId);
+  fd.append('reset_session', resetSession ? 'true' : 'false');
 
   const send = (retried = false) => new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -302,6 +308,7 @@ async function clearChatHistory(sessionId) {
 
 window.API = {
   getSessionId,
+  startSession,
   checkHealth,
   listDocuments,
   uploadDocument,
