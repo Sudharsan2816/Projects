@@ -68,8 +68,8 @@ class Settings(BaseSettings):
     MODEL_CACHE_DIR: Path = BASE_DIR / "data" / "model_cache"
 
     # Chunking
-    CHUNK_SIZE: int = 800
-    CHUNK_OVERLAP: int = 100
+    CHUNK_SIZE: int = 305
+    CHUNK_OVERLAP: int = 38
 
     # FAISS
     TOP_K_RESULTS: int = 6
