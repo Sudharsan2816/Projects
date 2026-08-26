@@ -1,7 +1,8 @@
 {
-  "generated_at": "2026-08-01T06:46:29.387213+00:00",
+  "generated_at": "2026-08-09T07:01:50.827584+00:00",
   "dataset": "rag_eval_dataset.json",
-  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_provider": "nvidia",
+  "embedding_model": "nvidia/nv-embedqa-e5-v5",
   "top_k": 3,
   "retrieval_summary": {
     "cases": 3,
@@ -21,7 +22,7 @@
       "retrieved_chunk_ids": [
         "market_report.pdf::0",
         "market_report.pdf::1",
-        "competitor_pricing.md::0"
+        "buyer_interviews.txt::1"
       ],
       "retrieval": {
         "k": 3,
@@ -43,7 +44,7 @@
       "retrieved_chunk_ids": [
         "competitor_pricing.md::1",
         "competitor_pricing.md::0",
-        "market_report.pdf::0"
+        "buyer_interviews.txt::0"
       ],
       "retrieval": {
         "k": 3,
@@ -63,8 +64,8 @@
       "id": "buyer-criteria",
       "question": "Which product capabilities matter most to buyers?",
       "retrieved_chunk_ids": [
-        "market_report.pdf::1",
         "buyer_interviews.txt::0",
+        "market_report.pdf::1",
         "buyer_interviews.txt::1"
       ],
       "retrieval": {
@@ -83,7 +84,7 @@
     }
   ],
   "methodology": {
-    "retrieval": "Cosine similarity over the production local embedding model.",
+    "retrieval": "Cosine similarity over the production nvidia embedding model (nvidia/nv-embedqa-e5-v5).",
     "faithfulness": "Deterministic claim-token support heuristic over retrieved contexts.",
     "citations": "Exact relevant chunk identity precision and recall."
   }

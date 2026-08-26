@@ -18,22 +18,28 @@ logger = get_logger(__name__)
 settings = get_settings()
 
 
+def _load_history(db: Session, session_id: str) -> list[dict[str, str]]:
+    """Load the newest bounded history, returned in chronological order."""
+    rows = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id == session_id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(settings.CHAT_HISTORY_DB_LIMIT)
+        .all()
+    )
+    rows.reverse()
+    return [{"role": message.role, "content": message.content} for message in rows]
+
+
 @router.post("/", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
     session_id = normalize_session_id(request.session_id)
     user_message = request.message.strip()
     # Load history
-    history_rows = (
-        db.query(ChatMessage)
-        .filter(ChatMessage.session_id == session_id)
-        .order_by(ChatMessage.created_at.asc())
-        .limit(settings.CHAT_HISTORY_DB_LIMIT)
-        .all()
-    )
-    history = [{"role": m.role, "content": m.content} for m in history_rows]
+    history = _load_history(db, session_id)
 
     try:
-        answer, sources = chat(
+        answer, sources, answer_mode = chat(
             session_id=session_id,
             user_message=user_message,
             history=history,
@@ -56,10 +62,16 @@ async def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
         role="assistant",
         content=answer,
         sources=json.dumps(sources) if sources else None,
+        answer_mode=answer_mode,
     ))
     db.commit()
 
-    return ChatResponse(role="assistant", content=answer, sources=sources)
+    return ChatResponse(
+        role="assistant",
+        content=answer,
+        sources=sources,
+        answer_mode=answer_mode,
+    )
 
 
 @router.post("/stream")
@@ -67,19 +79,13 @@ async def chat_stream_endpoint(request: ChatRequest, db: Session = Depends(get_d
     """SSE streaming endpoint — yields text chunks then a final JSON sources line."""
     session_id = normalize_session_id(request.session_id)
     user_message = request.message.strip()
-    history_rows = (
-        db.query(ChatMessage)
-        .filter(ChatMessage.session_id == session_id)
-        .order_by(ChatMessage.created_at.asc())
-        .limit(settings.CHAT_HISTORY_DB_LIMIT)
-        .all()
-    )
-    history = [{"role": m.role, "content": m.content} for m in history_rows]
+    history = _load_history(db, session_id)
     def event_stream():
         full_answer_parts = []
         sources = []
+        answer_mode = None
         try:
-            for chunk, src in chat_stream(
+            for chunk, src, mode in chat_stream(
                 session_id=session_id,
                 user_message=user_message,
                 history=history,
@@ -89,6 +95,8 @@ async def chat_stream_endpoint(request: ChatRequest, db: Session = Depends(get_d
                     yield f"data: {json.dumps({'token': chunk})}\n\n"
                 if src is not None:
                     sources.extend(src)
+                if mode is not None:
+                    answer_mode = mode
         except Exception as error:
             logger.error("Chat stream error: %s", error, exc_info=True)
             detail = str(error) if isinstance(error, LLMProviderError) else "Chat generation failed"
@@ -107,6 +115,7 @@ async def chat_stream_endpoint(request: ChatRequest, db: Session = Depends(get_d
                 role="assistant",
                 content=full_answer,
                 sources=json.dumps(sources) if sources else None,
+                answer_mode=answer_mode,
             ))
             persist_db.commit()
         except Exception as e:
@@ -114,7 +123,7 @@ async def chat_stream_endpoint(request: ChatRequest, db: Session = Depends(get_d
         finally:
             persist_db.close()
 
-        yield f"data: {json.dumps({'done': True, 'sources': sources})}\n\n"
+        yield f"data: {json.dumps({'done': True, 'sources': sources, 'answer_mode': answer_mode})}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
@@ -133,6 +142,7 @@ def get_history(session_id: str, db: Session = Depends(get_db)):
             "role": m.role,
             "content": m.content,
             "sources": json.loads(m.sources) if m.sources else [],
+            "answer_mode": m.answer_mode,
             "created_at": m.created_at,
         }
         for m in messages

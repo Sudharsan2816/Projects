@@ -88,6 +88,7 @@ def health():
         },
         "token_limits": {
             "max_output_tokens": settings.LLM_MAX_OUTPUT_TOKENS,
+            "chat_max_output_tokens": settings.CHAT_MAX_OUTPUT_TOKENS,
             "chat_history_db_limit": settings.CHAT_HISTORY_DB_LIMIT,
             "chat_context_messages": settings.CHAT_HISTORY_CONTEXT_LIMIT,
         },

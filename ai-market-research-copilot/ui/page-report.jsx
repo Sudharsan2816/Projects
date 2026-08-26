@@ -29,6 +29,11 @@ const PageReport = ({ report, reports, sessionId, setRoute, onSelectReport }) =>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{r.topic}</div>
                   <div className="dim mono" style={{ fontSize: 12 }}>#{r.id} · {API.relativeTime(r.created_at)}</div>
+                  {r.source_document_names?.length > 0 && (
+                    <div className="muted mt-8" style={{ fontSize: 11 }}>
+                      {r.source_document_names.length === 1 ? "Individual" : "Combined"} report · {r.source_document_names.join(", ")}
+                    </div>
+                  )}
                 </div>
                 <span className="badge badge-pos">DONE</span>
               </div>
@@ -50,20 +55,31 @@ const PageReport = ({ report, reports, sessionId, setRoute, onSelectReport }) =>
             Report · <span className="mono">#{m.id}</span> · {API.relativeTime(m.createdAt)}
           </div>
           <h1 className="h-display" style={{ fontSize: 30, lineHeight: 1.1 }}>{m.topic}</h1>
+          {m.sourceDocumentNames.length > 0 && (
+            <div className="row gap-8 mt-8" style={{ flexWrap: "wrap" }}>
+              <span className="badge badge-info">
+                {m.sourceDocumentNames.length === 1 ? "Individual report" : "Combined report"}
+              </span>
+              {m.sourceDocumentNames.map((name) => (
+                <span className="source-chip" key={name}>
+                  <Icon name="file" size={12} /> {name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <div className="row gap-8">
           <button className="btn" onClick={() => setRoute("research")}>
             <Icon name="refresh" size={13} /> New report
           </button>
           {m.downloadReady && (
-            <a
+            <button
+              type="button"
               className="btn btn-primary"
-              href={API.reportDownloadUrl(sessionId, m.id)}
-              target="_blank"
-              rel="noopener noreferrer"
+              onClick={() => API.downloadReport(sessionId, m.id).catch(error => alert(error.message))}
             >
               <Icon name="download" size={13} /> Export PDF
-            </a>
+            </button>
           )}
         </div>
       </div>
@@ -124,9 +140,13 @@ const SummaryTab = ({ summary, setRoute, reportId, sessionId, downloadReady }) =
           <Icon name="chat" size={13} /> Ask follow-ups
         </button>
         {reportId && downloadReady && (
-          <a className="btn btn-sm" href={API.reportDownloadUrl(sessionId, reportId)} target="_blank" rel="noopener noreferrer">
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => API.downloadReport(sessionId, reportId).catch(error => alert(error.message))}
+          >
             <Icon name="download" size={13} /> Export PDF
-          </a>
+          </button>
         )}
       </div>
     </div>

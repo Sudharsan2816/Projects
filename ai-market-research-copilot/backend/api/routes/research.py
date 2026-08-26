@@ -10,7 +10,7 @@ from backend.core.config import get_settings
 from backend.core.database import SessionLocal, get_db
 from backend.core.logging import get_logger
 from backend.core.safety import normalize_session_id
-from backend.models.db_models import Report
+from backend.models.db_models import Document, Report
 from backend.models.db_models import Session as DBSession
 from backend.models.schemas import ResearchRequest, StatusResponse
 from backend.services.llm import LLMProviderError
@@ -70,10 +70,17 @@ def _run_report(session_id: str, topic: str, report_id: int) -> None:
         report.updated_at = datetime.utcnow()
         db.commit()
 
+        source_filenames = (
+            json.loads(report.source_document_names)
+            if report.source_document_names
+            else None
+        )
+
         data = generate_full_report(
             session_id,
             topic,
             on_progress=lambda progress, stage: _set_progress(report_id, progress, stage),
+            source_filenames=source_filenames,
         )
 
         _set_progress(report_id, 92, "Rendering PDF")
@@ -203,6 +210,35 @@ def generate_report(request: ResearchRequest, db: Session = Depends(get_db)):
             data={"report_id": existing.id, "resumed": True},
         )
 
+    indexed_documents = (
+        db.query(Document)
+        .filter(Document.session_id == session_id, Document.indexed.is_(True))
+        .order_by(Document.created_at.asc())
+        .all()
+    )
+    if request.document_ids is None:
+        # Preserve the existing API behavior for older clients while making the
+        # new UI selection explicit.
+        selected_documents = indexed_documents
+    else:
+        requested_ids = list(dict.fromkeys(request.document_ids))
+        if indexed_documents and not requested_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="Select at least one indexed document for this report.",
+            )
+        indexed_by_id = {document.id: document for document in indexed_documents}
+        missing_ids = [doc_id for doc_id in requested_ids if doc_id not in indexed_by_id]
+        if missing_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="One or more selected documents are unavailable in this session.",
+            )
+        selected_documents = [indexed_by_id[doc_id] for doc_id in requested_ids]
+
+    source_document_ids = [document.id for document in selected_documents]
+    source_document_names = [document.filename for document in selected_documents]
+
     db_session = db.query(DBSession).filter(DBSession.session_id == session_id).first()
     if not db_session:
         db_session = DBSession(session_id=session_id, topic=topic)
@@ -216,6 +252,8 @@ def generate_report(request: ResearchRequest, db: Session = Depends(get_db)):
         status="pending",
         progress=0,
         current_stage="Queued",
+        source_document_ids=json.dumps(source_document_ids),
+        source_document_names=json.dumps(source_document_names),
     )
     db.add(report)
     db.commit()
@@ -232,7 +270,19 @@ def generate_report(request: ResearchRequest, db: Session = Depends(get_db)):
     return StatusResponse(
         status="accepted",
         message="Report generation started",
-        data={"report_id": report.id, "resumed": False},
+        data={
+            "report_id": report.id,
+            "resumed": False,
+            "document_ids": source_document_ids,
+            "document_names": source_document_names,
+            "report_scope": (
+                "individual"
+                if len(source_document_ids) == 1
+                else "combined"
+                if len(source_document_ids) > 1
+                else "general"
+            ),
+        },
     )
 
 
@@ -271,6 +321,16 @@ def _serialize_report(report: Report) -> dict:
         "progress": report.progress or 0,
         "current_stage": report.current_stage,
         "error_message": report.error_message,
+        "source_document_ids": (
+            json.loads(report.source_document_ids)
+            if report.source_document_ids
+            else []
+        ),
+        "source_document_names": (
+            json.loads(report.source_document_names)
+            if report.source_document_names
+            else []
+        ),
         "executive_summary": report.executive_summary,
         "competitors": json.loads(report.competitors) if report.competitors else None,
         "pricing_insights": json.loads(report.pricing_insights) if report.pricing_insights else None,
