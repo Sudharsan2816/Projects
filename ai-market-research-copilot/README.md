@@ -154,7 +154,8 @@ The current local suite contains **101 passing tests**. Focused coverage include
 
 ## RAG Evaluation
 
-A starter golden set lives at `evals/rag_golden_set.json`. Add real labeled questions in this format:
+A six-case committed fixture evaluation lives at `evals/rag_eval_dataset.json`, and a starter
+golden-set template lives at `evals/rag_golden_set.json`. Add real labeled questions in this format:
 
 ```json
 {
