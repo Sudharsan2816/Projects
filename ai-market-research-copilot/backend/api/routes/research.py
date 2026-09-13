@@ -1,6 +1,5 @@
 import json
 from concurrent.futures import Future, ThreadPoolExecutor
-from datetime import datetime
 from threading import Lock
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,7 +9,7 @@ from backend.core.config import get_settings
 from backend.core.database import SessionLocal, get_db
 from backend.core.logging import get_logger
 from backend.core.safety import normalize_session_id
-from backend.models.db_models import Document, Report
+from backend.models.db_models import Document, Report, utc_now
 from backend.models.db_models import Session as DBSession
 from backend.models.schemas import ResearchRequest, StatusResponse
 from backend.services.llm import LLMProviderError
@@ -41,7 +40,7 @@ def _set_progress(report_id: int, progress: int, stage: str) -> None:
             return
         report.progress = max(0, min(100, progress))
         report.current_stage = stage[:80]
-        report.updated_at = datetime.utcnow()
+        report.updated_at = utc_now()
         db.commit()
     finally:
         db.close()
@@ -67,7 +66,7 @@ def _run_report(session_id: str, topic: str, report_id: int) -> None:
         report.progress = 2
         report.current_stage = "Starting analysis"
         report.error_message = None
-        report.updated_at = datetime.utcnow()
+        report.updated_at = utc_now()
         db.commit()
 
         source_filenames = (
@@ -106,7 +105,7 @@ def _run_report(session_id: str, topic: str, report_id: int) -> None:
         report.progress = 100
         report.current_stage = "Report ready"
         report.error_message = None
-        report.updated_at = datetime.utcnow()
+        report.updated_at = utc_now()
         db.commit()
         logger.info("[%s] Report %s completed", session_id, report_id)
     except Exception as error:
@@ -117,7 +116,7 @@ def _run_report(session_id: str, topic: str, report_id: int) -> None:
             report.status = "failed"
             report.current_stage = "Generation failed"
             report.error_message = _public_failure_message(error)
-            report.updated_at = datetime.utcnow()
+            report.updated_at = utc_now()
             db.commit()
     finally:
         db.close()

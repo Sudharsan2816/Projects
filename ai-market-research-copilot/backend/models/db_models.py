@@ -1,9 +1,14 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from backend.core.database import Base
+
+
+def utc_now() -> datetime:
+    """Return an aware UTC timestamp for database defaults and job updates."""
+    return datetime.now(UTC)
 
 
 class Session(Base):
@@ -12,8 +17,8 @@ class Session(Base):
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(String(64), unique=True, index=True, nullable=False)
     topic = Column(String(255), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
     documents = relationship("Document", back_populates="session", cascade="all, delete-orphan")
     reports = relationship("Report", back_populates="session", cascade="all, delete-orphan")
@@ -33,7 +38,7 @@ class Document(Base):
     indexed = Column(Boolean, default=False)
     brief = Column(Text, nullable=True)
     brief_status = Column(String(20), default="pending")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
 
     session = relationship("Session", back_populates="documents")
 
@@ -56,8 +61,8 @@ class Report(Base):
     error_message = Column(Text, nullable=True)
     source_document_ids = Column(Text, nullable=True)    # JSON list of document ids
     source_document_names = Column(Text, nullable=True)  # JSON list of persisted filenames
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
     session = relationship("Session", back_populates="reports")
 
@@ -71,6 +76,6 @@ class ChatMessage(Base):
     content = Column(Text, nullable=False)
     sources = Column(Text, nullable=True)       # JSON: list of source citations
     answer_mode = Column(String(30), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
 
     session = relationship("Session", back_populates="chat_messages")

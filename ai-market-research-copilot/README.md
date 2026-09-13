@@ -134,9 +134,10 @@ This project demonstrates:
 
 ```bash
 python -m pytest -q
+ruff check backend tests scripts
 ```
 
-Current focused coverage includes:
+The current local suite contains **101 passing tests**. Focused coverage includes:
 
 - Provider-key defaults are not hardcoded.
 - CORS defaults are not wildcard-with-credentials.
@@ -147,6 +148,9 @@ Current focused coverage includes:
 - Strict RAG does not call the LLM when no indexed context is retrieved.
 - Hybrid chat uses general knowledge only for market-research questions and refuses unrelated prompts.
 - RAG retrieval metric helpers compute recall@k and hit@k.
+- Multipart upload, document persistence, and document-list API behavior.
+- Persisted FAISS indexing through the retrieval and thresholding pipeline.
+- Streaming SSE output plus persisted user, assistant, source, and answer-mode history.
 
 ## RAG Evaluation
 
@@ -186,9 +190,11 @@ See [`docs/RAG_EVALUATION.md`](docs/RAG_EVALUATION.md) for the latest committed 
 
 ## Current Production Gaps
 
-- Add broader pytest coverage for upload API, retrieval integration, and streaming chat.
 - Expand the labeled evaluation set with real customer documents and an independent model-based judge.
 - Move from local SQLite/FAISS to managed storage for multi-user production workloads.
+- Move report execution from the bounded process-local worker pool to a durable external queue.
+- Run provider-backed latency and failure tests for long summaries and concurrent report jobs.
+- Deploy a public demo with production secrets, authenticated tenancy, and persistent storage.
 
 ## Security Note
 
