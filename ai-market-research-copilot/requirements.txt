@@ -1,1 +1,24 @@
--r backend/requirements.txt
+# Vercel runtime dependencies. The local sentence-transformers fallback is
+# intentionally kept in backend/requirements.txt because its PyTorch stack can
+# exceed the serverless function bundle limit. Vercel uses NVIDIA embeddings.
+fastapi==0.139.2
+uvicorn[standard]==0.32.1
+python-multipart==0.0.32
+
+sqlalchemy==2.0.36
+pydantic-settings==2.6.1
+
+pymupdf==1.24.14
+pandas==2.2.3
+openpyxl==3.1.5
+
+faiss-cpu==1.9.0
+numpy==1.26.4
+
+google-genai>=1.0.0
+openai>=1.0.0
+httpx==0.28.1
+
+reportlab==4.2.5
+ddgs>=6.0.0
+python-dotenv==1.2.2
