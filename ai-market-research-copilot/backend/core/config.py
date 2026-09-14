@@ -1,9 +1,18 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+def _default_runtime_root() -> Path:
+    """Return a writable root for local and serverless runtime data."""
+    if os.getenv("VERCEL"):
+        return Path(os.getenv("TMPDIR", "/tmp")) / "market-research-copilot"
+    return BASE_DIR
 
 
 class Settings(BaseSettings):
@@ -55,17 +64,25 @@ class Settings(BaseSettings):
     CHAT_MAX_OUTPUT_TOKENS: int = 900
 
     # Paths
-    UPLOAD_DIR: Path = BASE_DIR / "data" / "uploads"
-    INDEX_DIR: Path = BASE_DIR / "data" / "indexes"
-    DB_DIR: Path = BASE_DIR / "data" / "db"
-    REPORTS_DIR: Path = BASE_DIR / "reports"
+    UPLOAD_DIR: Path = Field(
+        default_factory=lambda: _default_runtime_root() / "data" / "uploads"
+    )
+    INDEX_DIR: Path = Field(
+        default_factory=lambda: _default_runtime_root() / "data" / "indexes"
+    )
+    DB_DIR: Path = Field(default_factory=lambda: _default_runtime_root() / "data" / "db")
+    REPORTS_DIR: Path = Field(default_factory=lambda: _default_runtime_root() / "reports")
 
     # Database
-    DATABASE_URL: str = f"sqlite:///{BASE_DIR}/data/db/app.db"
+    DATABASE_URL: str = Field(
+        default_factory=lambda: f"sqlite:///{_default_runtime_root() / 'data' / 'db' / 'app.db'}"
+    )
 
     # Embeddings
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
-    MODEL_CACHE_DIR: Path = BASE_DIR / "data" / "model_cache"
+    MODEL_CACHE_DIR: Path = Field(
+        default_factory=lambda: _default_runtime_root() / "data" / "model_cache"
+    )
 
     # Chunking
     CHUNK_SIZE: int = 305
@@ -111,7 +128,7 @@ class Settings(BaseSettings):
             if provider.strip()
         ]
 
-    def ensure_dirs(self):
+    def ensure_dirs(self) -> None:
         for d in [
             self.UPLOAD_DIR,
             self.INDEX_DIR,
