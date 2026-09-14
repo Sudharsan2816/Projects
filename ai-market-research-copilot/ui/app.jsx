@@ -13,10 +13,11 @@ const REPORT_STEPS = [
 ];
 
 const App = () => {
-  const [sessionId] = useState(() => API.getSessionId());
+  const [sessionId, setSessionId] = useState(() => API.getSessionId());
   const [route, setRoute] = useState("dashboard");
 
   const [docs, setDocs] = useState([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState([]);
   const [reports, setReports] = useState([]);
   const [report, setReport] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -37,6 +38,7 @@ const App = () => {
   const selectReport = useCallback((raw) => {
     setReport(API.normalizeReport(raw));
     setTopic(raw.topic || "");
+    setSelectedDocumentIds(raw.source_document_ids || []);
     setRoute("report");
   }, []);
 
@@ -57,18 +59,21 @@ const App = () => {
         role: message.role === "assistant" ? "ai" : message.role,
         content: message.content,
         sources: message.sources || [],
+        answerMode: message.answer_mode || (message.sources?.length ? "documents" : null),
       })));
 
       const active = reportData.find((item) => ["pending", "generating"].includes(item.status));
       if (active) {
         setActiveReportId(active.id);
         setTopic(active.topic || "");
+        setSelectedDocumentIds(active.source_document_ids || []);
         setJobProgress(active.progress || 0);
         setJobStage(active.current_stage || "Queued");
       }
       const latestDone = reportData.find((item) => item.status === "done");
       if (latestDone) {
         setReport(API.normalizeReport(latestDone));
+        if (!active) setSelectedDocumentIds(latestDone.source_document_ids || []);
         if (!active) setTopic(latestDone.topic || "");
       }
     };
@@ -118,24 +123,73 @@ const App = () => {
     };
   }, [activeReportId, mergeReport, sessionId]);
 
-  const refreshDocs = useCallback(() => {
-    API.listDocuments(sessionId).then(setDocs).catch(() => {});
+  const refreshDocs = useCallback(async (targetSessionId = sessionId) => {
+    try {
+      const documentData = await API.listDocuments(targetSessionId);
+      setDocs(documentData);
+      const availableIds = new Set(documentData.map((document) => document.id));
+      setSelectedDocumentIds((current) => current.filter((id) => availableIds.has(id)));
+      return documentData;
+    } catch {
+      return [];
+    }
   }, [sessionId]);
+
+  const startFreshSession = useCallback(() => {
+    const nextSessionId = API.startSession();
+    setSessionId(nextSessionId);
+    setDocs([]);
+    setSelectedDocumentIds([]);
+    setReports([]);
+    setReport(null);
+    setMessages([]);
+    setTopic("");
+    setActiveReportId(null);
+    setJobProgress(0);
+    setJobStage("");
+    setGenerationError("");
+    return nextSessionId;
+  }, []);
+
+  const prepareReportFromDocuments = useCallback((documentIds, documentNames = []) => {
+    const selectedIds = [...new Set(documentIds)];
+    setSelectedDocumentIds(selectedIds);
+    if (!topic.trim()) {
+      const selectedNames = (
+        documentNames.length
+          ? documentNames
+          : docs
+            .filter((document) => selectedIds.includes(document.id))
+            .map((document) => document.name)
+      ).map((name) => name.replace(/\.[^.]+$/, ""));
+      if (selectedNames.length === 1) setTopic(`${selectedNames[0]} market analysis`);
+      if (selectedNames.length > 1) setTopic(`${selectedNames.join(" + ")} combined analysis`);
+    }
+    setRoute("research");
+  }, [docs, topic]);
 
   const onGenerate = useCallback(async () => {
     if (!topic.trim() || activeReportId) return;
+    if (docs.length > 0 && selectedDocumentIds.length === 0) {
+      setGenerationError("Select at least one indexed document for this report.");
+      return;
+    }
     setGenerationError("");
     setJobProgress(0);
     setJobStage("Submitting report job");
     try {
-      const response = await API.generateReport(sessionId, topic.trim());
+      const response = await API.generateReport(
+        sessionId,
+        topic.trim(),
+        selectedDocumentIds,
+      );
       const reportId = response.data && response.data.report_id;
       if (!reportId) throw new Error("Backend did not return a report id");
       setActiveReportId(reportId);
     } catch (error) {
       setGenerationError(error.message || "Unable to start report generation");
     }
-  }, [activeReportId, sessionId, topic]);
+  }, [activeReportId, docs.length, selectedDocumentIds, sessionId, topic]);
 
   const openLatestReport = useCallback(() => {
     if (report) setRoute("report");
@@ -192,9 +246,10 @@ const App = () => {
             <PageUpload
               sessionId={sessionId}
               docs={docs}
-              setDocs={setDocs}
               refreshDocs={refreshDocs}
+              startFreshSession={startFreshSession}
               setRoute={setRoute}
+              onPrepareReport={prepareReportFromDocuments}
             />
           )}
           {route === "research" && (
@@ -210,6 +265,9 @@ const App = () => {
               error={generationError}
               reportReady={Boolean(report)}
               onOpenReport={openLatestReport}
+              docs={docs}
+              selectedDocumentIds={selectedDocumentIds}
+              setSelectedDocumentIds={setSelectedDocumentIds}
             />
           )}
           {route === "report" && (

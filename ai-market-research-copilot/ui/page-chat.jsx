@@ -1,8 +1,8 @@
 /* Page: Chat */
 
 const PageChat = ({ sessionId, messages, setMessages, docs }) => {
-  const [input,      setInput]      = React.useState("");
-  const [streaming,  setStreaming]  = React.useState(false);
+  const [input, setInput] = React.useState("");
+  const [streaming, setStreaming] = React.useState(false);
   const [streamText, setStreamText] = React.useState("");
   const feedRef = React.useRef(null);
 
@@ -20,6 +20,7 @@ const PageChat = ({ sessionId, messages, setMessages, docs }) => {
 
     let fullText = "";
     let finalSources = [];
+    let finalAnswerMode = "documents";
 
     try {
       for await (const event of API.chatStream(sessionId, question)) {
@@ -29,20 +30,20 @@ const PageChat = ({ sessionId, messages, setMessages, docs }) => {
         }
         if (event.done) {
           finalSources = event.sources || [];
+          finalAnswerMode = event.answer_mode || "documents";
         }
-        if (event.error) {
-          throw new Error(event.error);
-        }
+        if (event.error) throw new Error(event.error);
       }
       setMessages(prev => [...prev, {
         role: "ai",
         content: fullText,
         sources: finalSources,
+        answerMode: finalAnswerMode,
       }]);
-    } catch (e) {
+    } catch (error) {
       setMessages(prev => [...prev, {
         role: "ai",
-        content: `Error: ${e.message}`,
+        content: `Error: ${error.message}`,
         sources: [],
       }]);
     } finally {
@@ -60,21 +61,33 @@ const PageChat = ({ sessionId, messages, setMessages, docs }) => {
 
   const renderText = (text) => {
     const parts = text.split(/(\[\d+\]|\*\*[^*]+\*\*)/g);
-    return parts.map((p, i) => {
-      const cite = p.match(/^\[(\d+)\]$/);
-      if (cite) return <span key={i} className="citation">{cite[1]}</span>;
-      const bold = p.match(/^\*\*(.+)\*\*$/);
-      if (bold) return <strong key={i} style={{ fontWeight: 600 }}>{bold[1]}</strong>;
-      return <span key={i}>{p}</span>;
+    return parts.map((part, index) => {
+      const citation = part.match(/^\[(\d+)\]$/);
+      if (citation) return <span key={index} className="citation">{citation[1]}</span>;
+      const bold = part.match(/^\*\*(.+)\*\*$/);
+      if (bold) return <strong key={index} style={{ fontWeight: 600 }}>{bold[1]}</strong>;
+      return <span key={index}>{part}</span>;
     });
   };
 
+  const modeLabel = (mode) => ({
+    documents: "Uploaded documents",
+    general_market_knowledge: "General market knowledge",
+    report_irrelevant: "Not in report",
+    out_of_scope: "Scope guard",
+  }[mode] || "");
+
+  const modeClass = (mode) => ({
+    documents: "badge-info",
+    report_irrelevant: "badge-warn",
+  }[mode] || "");
+
   const suggestedQuestions = [
+    "How do I calculate TAM, SAM, and SOM for a new market?",
     "Who are the top competitors and how do they differ?",
     "What's the pricing benchmark for the core segment?",
     "Which trends will hit hardest in the next 12 months?",
     "What's the white space we should target?",
-    "What are the biggest market threats?",
   ];
 
   return (
@@ -83,13 +96,13 @@ const PageChat = ({ sessionId, messages, setMessages, docs }) => {
         <div>
           <div className="eyebrow mb-8">Step 04 — Interrogate</div>
           <h1 className="h-display" style={{ fontSize: 28 }}>
-            Chat with your <span className="italic serif">corpus.</span>
+            Chat with your <span className="italic serif">research copilot.</span>
           </h1>
         </div>
         <div className="row gap-8">
           <span className="status-pill">
             <span className="status-dot"></span>
-            {docs.length} docs · streaming
+            {docs.length} docs · hybrid answers
           </span>
           <button className="btn btn-ghost btn-sm" onClick={clearChat}>
             <Icon name="refresh" size={12} /> Clear
@@ -103,14 +116,14 @@ const PageChat = ({ sessionId, messages, setMessages, docs }) => {
             <div style={{ display: "grid", placeItems: "center", height: "100%", textAlign: "center" }}>
               <div>
                 <div style={{ fontSize: 22, fontFamily: "var(--font-serif)", marginBottom: 8 }}>
-                  Ask anything about your corpus.
+                  Ask about your sources or market research.
                 </div>
                 <div className="muted mb-24" style={{ fontSize: 13 }}>
-                  Every answer cites the exact passage. Try one of these:
+                  Document answers are cited. General market guidance is clearly labeled.
                 </div>
                 <div className="row gap-8" style={{ flexWrap: "wrap", justifyContent: "center", maxWidth: 640 }}>
-                  {suggestedQuestions.map(q => (
-                    <span key={q} className="chip" onClick={() => send(q)}>{q}</span>
+                  {suggestedQuestions.map(question => (
+                    <button type="button" key={question} className="chip" onClick={() => send(question)}>{question}</button>
                   ))}
                 </div>
               </div>
@@ -118,20 +131,27 @@ const PageChat = ({ sessionId, messages, setMessages, docs }) => {
           )}
 
           <div className="chat-feed">
-            {messages.map((msg, i) => (
-              <div key={i} className="msg fade-in">
-                <div className={`msg-avatar ${msg.role}`}>
-                  {msg.role === "user" ? "U" : "AI"}
+            {messages.map((message, index) => (
+              <div key={index} className="msg fade-in">
+                <div className={`msg-avatar ${message.role}`}>
+                  {message.role === "user" ? "U" : "AI"}
                 </div>
                 <div className="msg-body">
-                  <div className="msg-author">{msg.role === "user" ? "You" : "Marketscope"}</div>
-                  <div className="msg-text">{renderText(msg.content)}</div>
-                  {msg.sources && msg.sources.length > 0 && (
+                  <div className="msg-author">{message.role === "user" ? "You" : "Marketscope"}</div>
+                  {message.role !== "user" && modeLabel(message.answerMode) && (
+                    <div className="mb-8">
+                      <span className={`badge ${modeClass(message.answerMode)}`}>
+                        {modeLabel(message.answerMode)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="msg-text">{renderText(message.content)}</div>
+                  {message.sources && message.sources.length > 0 && (
                     <div className="sources">
-                      {msg.sources.map((s, si) => (
-                        <span key={si} className="source-chip">
-                          <span className="source-chip-num">{s.idx || si + 1}</span>
-                          {s.doc || s.source || s.filename || "source"}{s.page ? ` · p.${s.page}` : ""}
+                      {message.sources.map((source, sourceIndex) => (
+                        <span key={sourceIndex} className="source-chip">
+                          <span className="source-chip-num">{source.idx || sourceIndex + 1}</span>
+                          {source.doc || source.source || source.filename || "source"}{source.page ? ` · p.${source.page}` : ""}
                         </span>
                       ))}
                     </div>
@@ -159,16 +179,19 @@ const PageChat = ({ sessionId, messages, setMessages, docs }) => {
             <textarea
               rows={1}
               value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+              onChange={event => setInput(event.target.value)}
+              onKeyDown={event => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  send();
+                }
               }}
-              placeholder="Ask a question about your corpus…"
+              placeholder="Ask about your documents or a market-research topic…"
               disabled={streaming}
             />
             <div className="composer-actions">
               <span className="composer-hint">
-                ⏎ to send · ⇧⏎ for newline · cited from {docs.length} doc{docs.length !== 1 ? "s" : ""}
+                Enter to send · Shift+Enter for newline · {docs.length} indexed doc{docs.length !== 1 ? "s" : ""}
               </span>
               <button
                 className="btn btn-primary btn-sm"

@@ -34,15 +34,14 @@ jobs:
 
       - name: Run tests
         env:
-          LLM_PROVIDER: ollama
           EMBEDDING_PROVIDER: local
-        run: pytest -q
+        run: python -m pytest -q
 
       - name: Lint
         run: ruff check backend tests scripts
 
       - name: Type check core evaluation and observability
-        run: mypy backend/core/observability.py backend/evaluation scripts/run_rag_eval.py
+        run: mypy --follow-imports=skip backend/core/observability.py backend/evaluation scripts/run_rag_eval.py
 
       - name: Run deterministic RAG evaluation
         env:

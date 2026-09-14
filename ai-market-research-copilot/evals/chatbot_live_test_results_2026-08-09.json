@@ -1,0 +1,154 @@
+{
+  "run_date": "2026-08-09",
+  "endpoint": "POST /api/v1/chat/stream",
+  "session_id": "9cc2de2c-7629-488d-b3f7-069dc62a4001",
+  "source": "market_research_test_sample.pdf",
+  "provider": "nvidia",
+  "summary": {
+    "total": 12,
+    "passed": 9,
+    "failed": 3,
+    "pass_rate": 0.75,
+    "median_duration_ms": 4693,
+    "mean_duration_ms": 15687,
+    "max_duration_ms": 82300
+  },
+  "cases": [
+    {
+      "id": "TC-01",
+      "category": "entity_profile",
+      "question": "Tell me about KrishiKube",
+      "expected": "Grounded KrishiKube profile",
+      "answer": "**Direct Answer**\n\n* **KrishiKube** is a Chennai-based brand, founded in 2022 by Deepak Sundaram and Nandhini Rao, holding **15%** of the organised-retail share in the Indian consumer vertical-farming appliance market.\n* It is the **fastest-growing** among the majors, with **79% year-on-year growth**, and is known for its **KrishiKube Mini** at ₹8,990, which opened the sub-₹10,000 tier.\n* **Key Strength**: In-house manufacturing in Sriperumbudur, giving it a **22% unit-cost advantage** over SproutNest. **Key Weakness**: Under-developed app and firmware complaints, leading to a **4.1-star average rating**.\n\n**Source**: Section 3.3, [market_research_test_sample.pdf, Page 2]",
+      "answer_mode": "documents",
+      "source_count": 3,
+      "duration_ms": 14438,
+      "result": "pass"
+    },
+    {
+      "id": "TC-02",
+      "category": "direct_fact",
+      "question": "Who founded SproutNest?",
+      "expected": "Aravind Menon, 2021",
+      "answer": "**Direct Answer**\n* **SproutNest** was founded in **2021** by **Aravind Menon**.\n* **Headquarters**: Bengaluru\n* **Source**: Section 3.1, [market_research_test_sample.pdf, Page 1]",
+      "answer_mode": "documents",
+      "source_count": 2,
+      "duration_ms": 4207,
+      "result": "pass"
+    },
+    {
+      "id": "TC-03",
+      "category": "exact_price",
+      "question": "What is the price of SproutNest Halo X2?",
+      "expected": "₹18,499",
+      "answer": "**Direct Answer**\nThe price of SproutNest Halo X2 is **₹18,499**.\n* **Tier**: Mid-premium\n* **Source**: Section 4, [market_research_test_sample.pdf, Page 3]",
+      "answer_mode": "documents",
+      "source_count": 2,
+      "duration_ms": 4625,
+      "result": "pass"
+    },
+    {
+      "id": "TC-04",
+      "category": "role_lookup",
+      "question": "Who is the lead analyst?",
+      "expected": "Priyanka Devanathan",
+      "answer": "**Direct Answer**\nThe lead analyst for the report **HGR-VF-2026-Q2-0417** is **Priyanka Devanathan**.\n* **Source**: Report Header, [market_research_test_sample.pdf, Page 1]",
+      "answer_mode": "documents",
+      "source_count": 2,
+      "duration_ms": 4053,
+      "result": "pass"
+    },
+    {
+      "id": "TC-05",
+      "category": "comparative_fact",
+      "question": "Which metro is growing the fastest?",
+      "expected": "Chennai, 61% year-on-year unit growth",
+      "answer": "**Direct Answer**\nThe fastest-growing metro in the Indian consumer vertical-farming appliance market is **Chennai**, with **61% year-on-year unit growth**.\n* **Source**: Executive Summary, [market_research_test_sample.pdf, Page 1]",
+      "answer_mode": "documents",
+      "source_count": 2,
+      "duration_ms": 4891,
+      "result": "pass"
+    },
+    {
+      "id": "TC-06",
+      "category": "report_summary",
+      "question": "What are the most important findings in the report?",
+      "expected": "Grounded multi-section report summary",
+      "answer": "The response accurately summarized market size and growth, competitive shares, pricing, opportunity, threat, return-rate risk, geography, and customer segments from all three indexed chunks.",
+      "answer_mode": "documents",
+      "source_count": 3,
+      "duration_ms": 82300,
+      "result": "pass_with_latency_warning"
+    },
+    {
+      "id": "TC-07",
+      "category": "missing_metric",
+      "question": "What is SproutNest's net profit margin?",
+      "expected": "Safe not-covered response without substituting gross margin",
+      "answer": "**Direct Answer**\nNot covered in the uploaded documents.\n\n* The report provides SproutNest's revenue source breakdown (41% from subscription seed-pod business with a 58% gross margin) but does not disclose net profit margin.",
+      "answer_mode": "report_irrelevant",
+      "source_count": 0,
+      "duration_ms": 49299,
+      "result": "pass_with_latency_warning"
+    },
+    {
+      "id": "TC-08",
+      "category": "unrelated_knowledge",
+      "question": "What is the capital of France?",
+      "expected": "Report-irrelevant response without answering",
+      "answer": "I checked the uploaded report first, but it does not contain information relevant to this question. Try asking about a topic, entity, or figure covered in the report.",
+      "answer_mode": "report_irrelevant",
+      "source_count": 0,
+      "duration_ms": 420,
+      "result": "pass"
+    },
+    {
+      "id": "TC-09",
+      "category": "market_like_distractor",
+      "question": "What is Tesla's 2026 market share?",
+      "expected": "Safe not-covered response for the current question only",
+      "answer": "The response safely said Tesla's market share was not covered, but it also repeated and answered the preceding France question as not covered before addressing Tesla.",
+      "answer_mode": "report_irrelevant",
+      "source_count": 0,
+      "duration_ms": 18461,
+      "result": "fail",
+      "failure": "answer_generation_history_contamination"
+    },
+    {
+      "id": "TC-10",
+      "category": "entity_weakness",
+      "question": "What are KrishiKube's weaknesses?",
+      "expected": "Under-developed app, firmware complaints, 4.1-star rating",
+      "answer": "**Direct Answer**\n\n* **KrishiKube's Weaknesses**: An under-developed app and a 4.1-star average rating, specifically dragged down by firmware complaints.\n* **Source**: Section 3.3 (KrishiKube), [market_research_test_sample.pdf, Page 2]",
+      "answer_mode": "documents",
+      "source_count": 1,
+      "duration_ms": 4761,
+      "result": "pass"
+    },
+    {
+      "id": "TC-11",
+      "category": "misspelled_entity",
+      "question": "Tell me about Krishikub",
+      "expected": "Recover likely KrishiKube intent",
+      "answer": "I checked the uploaded report first, but it does not contain information relevant to this question. Try asking about a topic, entity, or figure covered in the report.",
+      "answer_mode": "report_irrelevant",
+      "source_count": 0,
+      "duration_ms": 360,
+      "result": "fail",
+      "failure": "no_typo_tolerance"
+    },
+    {
+      "id": "TC-12",
+      "category": "pronoun_follow_up",
+      "question": "What are its weaknesses?",
+      "setup": "Tell me about KrishiKube",
+      "expected": "Resolve its to KrishiKube and answer from the report",
+      "answer": "I checked the uploaded report first, but it does not contain information relevant to this question. Try asking about a topic, entity, or figure covered in the report.",
+      "answer_mode": "report_irrelevant",
+      "source_count": 0,
+      "duration_ms": 425,
+      "result": "fail",
+      "failure": "no_history_aware_query_rewrite"
+    }
+  ]
+}

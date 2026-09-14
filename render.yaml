@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: ai-market-research-copilot
+    runtime: docker
+    plan: free
+    region: singapore
+    repo: https://github.com/Sudharsan2816/Projects
+    branch: agent/free-hosting
+    rootDir: ai-market-research-copilot
+    dockerfilePath: ./ai-market-research-copilot/Dockerfile.backend
+    dockerContext: ./ai-market-research-copilot
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: LLM_PROVIDER
+        value: nvidia
+      - key: EMBEDDING_PROVIDER
+        value: nvidia
+      - key: REPORT_WORKER_COUNT
+        value: "1"
+      - key: RATE_LIMIT_ENABLED
+        value: "true"
+      - key: RATE_LIMIT_REQUESTS
+        value: "30"
+      - key: NVIDIA_API_KEY
+        sync: false

@@ -10,6 +10,7 @@ from typing import Any
 
 import numpy as np
 
+from backend.core.config import get_settings
 from backend.evaluation.answer_metrics import evaluate_answer_case, summarize_answer_suite
 from backend.evaluation.rag_metrics import evaluate_retrieval_case, summarize_retrieval_suite
 from backend.services.embedder import embed_query, embed_texts
@@ -18,6 +19,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATASET = PROJECT_ROOT / "evals" / "rag_eval_dataset.json"
 DEFAULT_JSON = PROJECT_ROOT / "evals" / "rag_eval_results.json"
 DEFAULT_MARKDOWN = PROJECT_ROOT / "docs" / "RAG_EVALUATION.md"
+
+
+def active_embedding_metadata() -> tuple[str, str]:
+    """Describe the provider/model that the production embedder will actually use."""
+    settings = get_settings()
+    if settings.EMBEDDING_PROVIDER == "nvidia" and settings.NVIDIA_API_KEY:
+        return "nvidia", settings.NVIDIA_EMBEDDING_MODEL
+    return "local", f"sentence-transformers/{settings.EMBEDDING_MODEL}"
 
 
 def _retrieve(corpus: list[dict[str, Any]], query: str, top_k: int) -> list[dict[str, Any]]:
@@ -56,16 +65,21 @@ def run_evaluation(dataset_path: Path, top_k: int) -> dict[str, Any]:
             }
         )
 
+    embedding_provider, embedding_model = active_embedding_metadata()
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "dataset": dataset_path.name,
-        "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+        "embedding_provider": embedding_provider,
+        "embedding_model": embedding_model,
         "top_k": top_k,
         "retrieval_summary": summarize_retrieval_suite(retrieval_metrics),
         "answer_summary": summarize_answer_suite(answer_metrics),
         "cases": cases,
         "methodology": {
-            "retrieval": "Cosine similarity over the production local embedding model.",
+            "retrieval": (
+                f"Cosine similarity over the production {embedding_provider} "
+                f"embedding model ({embedding_model})."
+            ),
             "faithfulness": "Deterministic claim-token support heuristic over retrieved contexts.",
             "citations": "Exact relevant chunk identity precision and recall.",
         },
@@ -110,10 +124,15 @@ def render_markdown(results: dict[str, Any]) -> str:
             "",
             "## Methodology and limitations",
             "",
-            "Retrieval uses the same local sentence-transformer family as the application and a labeled fixture corpus. "
-            "The answer-level faithfulness score is a deterministic regression heuristic based on claim-token support; "
-            "it does not replace human review or an independent model judge. Citation metrics use exact chunk IDs. "
-            "Production evaluations should add real uploaded documents, adversarial questions, and provider-generated answers.",
+            (
+                results["methodology"]["retrieval"]
+                + " The evaluation uses a labeled fixture corpus. "
+                + "The answer-level faithfulness score is a deterministic regression "
+                + "heuristic based on claim-token support; it does not replace human "
+                + "review or an independent model judge. Citation metrics use exact "
+                + "chunk IDs. Production evaluations should add real uploaded documents, "
+                + "adversarial questions, and provider-generated answers."
+            ),
             "",
         ]
     )

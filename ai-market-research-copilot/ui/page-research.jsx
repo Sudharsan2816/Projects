@@ -12,6 +12,9 @@ const PageResearch = ({
   error,
   reportReady,
   onOpenReport,
+  docs,
+  selectedDocumentIds,
+  setSelectedDocumentIds,
 }) => {
   const suggestions = [
     "AI note-taking tools, global SMB market, 2026",
@@ -19,6 +22,29 @@ const PageResearch = ({
     "D2C skincare brands in India",
     "Voice AI agents for enterprises",
   ];
+  const selectedDocuments = docs.filter((document) => (
+    selectedDocumentIds.includes(document.id)
+  ));
+  const reportScope = selectedDocuments.length === 1
+    ? "Individual report"
+    : selectedDocuments.length > 1
+      ? "Combined report"
+      : docs.length > 0
+        ? "Select documents"
+        : "General market report";
+  const canGenerate = (
+    !generating
+    && topic.trim().length >= 3
+    && (docs.length === 0 || selectedDocuments.length > 0)
+  );
+
+  const toggleDocument = (documentId) => {
+    setSelectedDocumentIds((current) => (
+      current.includes(documentId)
+        ? current.filter((id) => id !== documentId)
+        : [...current, documentId]
+    ));
+  };
 
   return (
     <div className="fade-in page-stack">
@@ -38,7 +64,97 @@ const PageResearch = ({
         )}
       </header>
 
-      <section className="workspace-panel" aria-labelledby="research-brief-title">
+      {docs.length > 0 && (
+        <section className="workspace-panel" aria-labelledby="source-selection-title">
+          <div className="panel-heading">
+            <div>
+              <div className="eyebrow">Report sources</div>
+              <h2 id="source-selection-title">Select documents for this report</h2>
+              <p className="muted mt-8">
+                Select one document for an individual report, or two or more related documents
+                for a combined analysis.
+              </p>
+            </div>
+            <span className={`badge ${selectedDocuments.length ? "badge-info" : "badge-warn"}`}>
+              {reportScope}
+            </span>
+          </div>
+
+          <div className="source-selection-toolbar">
+            <div className="muted" role="status" aria-live="polite">
+              {selectedDocuments.length} of {docs.length} document{docs.length === 1 ? "" : "s"} selected
+            </div>
+            <div className="row gap-8">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setSelectedDocumentIds(docs.map((document) => document.id))}
+                disabled={generating || selectedDocuments.length === docs.length}
+              >
+                Select all
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setSelectedDocumentIds([])}
+                disabled={generating || selectedDocuments.length === 0}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div className="source-selection-grid">
+            {docs.map((document) => {
+              const selected = selectedDocumentIds.includes(document.id);
+              return (
+                <label
+                  key={document.id}
+                  className={`source-select-card ${selected ? "selected" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => toggleDocument(document.id)}
+                    disabled={generating}
+                  />
+                  <span className="source-select-copy">
+                    <span className="source-select-name">{document.name}</span>
+                    <span className="dim mono">
+                      {document.chunks} indexed chunk{document.chunks === 1 ? "" : "s"}
+                    </span>
+                    {document.brief && (
+                      <span className="muted source-select-brief">
+                        {document.brief.replace(/\s+/g, " ").slice(0, 150)}
+                        {document.brief.length > 150 ? "…" : ""}
+                      </span>
+                    )}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+
+          {selectedDocuments.length > 1 && (
+            <div className="source-combination-note">
+              <Icon name="flag" size={15} />
+              <span>
+                Combined reports work best when every selected source covers the same market,
+                customer group, geography, or decision.
+              </span>
+            </div>
+          )}
+        </section>
+      )}
+
+      <form
+        className="workspace-panel"
+        aria-labelledby="research-brief-title"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (canGenerate) onGenerate();
+        }}
+      >
         <div className="panel-heading">
           <div>
             <div className="eyebrow">Research brief</div>
@@ -85,17 +201,23 @@ const PageResearch = ({
             <span>SWOT</span>
           </div>
           <button
-            type="button"
+            type="submit"
             className="btn btn-primary"
-            onClick={onGenerate}
-            disabled={generating || topic.trim().length < 3}
+            disabled={!canGenerate}
           >
             {generating
               ? <><span className="spinner" aria-hidden="true"></span> Report running</>
-              : <><Icon name="sparkle" size={14} /> Generate report</>}
+              : <>
+                  <Icon name="sparkle" size={14} />
+                  {selectedDocuments.length === 1
+                    ? "Generate individual report"
+                    : selectedDocuments.length > 1
+                      ? "Generate combined report"
+                      : "Generate report"}
+                </>}
           </button>
         </div>
-      </section>
+      </form>
 
       {error && (
         <section className="alert alert-error" role="alert">

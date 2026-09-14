@@ -83,3 +83,7 @@ Thumbs.db
 *.zip
 ui_template/
 Marketscope_UI_design.html
+
+.vercel
+.env.local
+.env.*.local
