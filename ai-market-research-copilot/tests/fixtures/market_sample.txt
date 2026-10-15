@@ -1,0 +1,5 @@
+India's electric two-wheeler charging software market reached an estimated USD 120 million in 2025.
+The market is expected to grow at approximately 18 percent annually through 2029.
+Fleet operators prioritize charger uptime, route planning, utilization analytics, and predictable subscription pricing.
+VoltGrid is positioned as the enterprise leader, while ChargeFlow competes on low-cost plans for small fleets.
+Typical software pricing ranges from USD 8 to USD 20 per connected vehicle per month.

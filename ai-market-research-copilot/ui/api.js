@@ -2,20 +2,75 @@
 
 // ── Session management ────────────────────────────────────────────────────────
 
-function getSessionId() {
-  let id = localStorage.getItem('marketscope_session');
-  if (!id) {
-    id = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
-    localStorage.setItem('marketscope_session', id);
-  }
+function createSessionId() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+}
+
+function startSession() {
+  const id = createSessionId();
+  localStorage.setItem('marketscope_session', id);
   return id;
+}
+
+function getSessionId() {
+  return localStorage.getItem('marketscope_session') || startSession();
 }
 
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
 
+const API_TOKEN_STORAGE_KEY = 'marketscope_api_token';
+let apiTokenPromptPromise = null;
+
+function getApiToken() {
+  return sessionStorage.getItem(API_TOKEN_STORAGE_KEY) || '';
+}
+
+function authHeaders(headers = {}) {
+  const token = getApiToken();
+  return token ? { ...headers, 'X-API-Key': token } : headers;
+}
+
+function requestApiToken() {
+  // Several protected requests run together during startup. Share one prompt so
+  // their simultaneous 401 responses do not ask for the same token repeatedly.
+  if (!apiTokenPromptPromise) {
+    apiTokenPromptPromise = Promise.resolve()
+      .then(() => window.prompt('This deployment is private. Enter its access token:'))
+      .then((token) => {
+        const normalized = (token || '').trim();
+        if (normalized) sessionStorage.setItem(API_TOKEN_STORAGE_KEY, normalized);
+        return normalized;
+      })
+      .finally(() => {
+        apiTokenPromptPromise = null;
+      });
+  }
+  return apiTokenPromptPromise;
+}
+
+async function apiFetch(path, options = {}, retried = false) {
+  const tokenAtRequestStart = getApiToken();
+  const response = await fetch(window.API_BASE + path, {
+    ...options,
+    headers: authHeaders(options.headers || {}),
+  });
+  if (response.status === 401 && !retried) {
+    // Another concurrent request may already have collected the token while this
+    // request was in flight. Retry with it instead of displaying another prompt.
+    const currentToken = getApiToken();
+    if (currentToken && currentToken !== tokenAtRequestStart) {
+      return apiFetch(path, options, true);
+    }
+    if (await requestApiToken()) {
+      return apiFetch(path, options, true);
+    }
+  }
+  return response;
+}
+
 async function apiGet(path) {
-  const res = await fetch(window.API_BASE + path);
+  const res = await apiFetch(path);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || `API error ${res.status}`);
@@ -24,7 +79,7 @@ async function apiGet(path) {
 }
 
 async function apiPost(path, body) {
-  const res = await fetch(window.API_BASE + path, {
+  const res = await apiFetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -37,7 +92,7 @@ async function apiPost(path, body) {
 }
 
 async function apiDelete(path) {
-  const res = await fetch(window.API_BASE + path, { method: 'DELETE' });
+  const res = await apiFetch(path, { method: 'DELETE' });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json();
 }
@@ -55,6 +110,8 @@ function normalizeDoc(d) {
     size,
     chunks: d.chunk_count || 0,
     indexed: ago,
+    brief: d.brief || '',
+    briefStatus: d.brief_status || (d.brief ? 'ready' : 'pending'),
   };
 }
 
@@ -103,6 +160,8 @@ function normalizeReport(r) {
     citations: [],
     createdAt: r.created_at,
     downloadReady: Boolean(r.download_ready),
+    sourceDocumentIds: r.source_document_ids || [],
+    sourceDocumentNames: r.source_document_names || [],
   };
 }
 
@@ -137,18 +196,26 @@ async function listDocuments(sessionId) {
   return data.map(normalizeDoc);
 }
 
-async function uploadDocument(sessionId, file, onProgress) {
+async function uploadDocument(sessionId, file, onProgress, resetSession = false) {
   const fd = new FormData();
   fd.append('file', file);
   fd.append('session_id', sessionId);
+  fd.append('reset_session', resetSession ? 'true' : 'false');
 
-  return new Promise((resolve, reject) => {
+  const send = (retried = false) => new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', window.API_BASE + '/api/v1/upload/');
+    const token = getApiToken();
+    if (token) xhr.setRequestHeader('X-API-Key', token);
     if (onProgress) xhr.upload.onprogress = (e) => onProgress(e.loaded / e.total);
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(JSON.parse(xhr.responseText));
+      } else if (xhr.status === 401 && !retried) {
+        requestApiToken().then((token) => {
+          if (token) send(true).then(resolve, reject);
+          else reject(new Error('Valid API credentials are required'));
+        }, reject);
       } else {
         let msg = `Upload error ${xhr.status}`;
         try { msg = JSON.parse(xhr.responseText).detail || msg; } catch {}
@@ -158,14 +225,23 @@ async function uploadDocument(sessionId, file, onProgress) {
     xhr.onerror = () => reject(new Error('Network error during upload'));
     xhr.send(fd);
   });
+  return send();
 }
 
 async function deleteDocument(sessionId, docId) {
   return apiDelete(`/api/v1/upload/${sessionId}/documents/${docId}`);
 }
 
-async function generateReport(sessionId, topic) {
-  return apiPost('/api/v1/research/generate', { session_id: sessionId, topic });
+async function generateDocumentBrief(sessionId, docId) {
+  return apiPost(`/api/v1/upload/${sessionId}/documents/${docId}/brief`, {});
+}
+
+async function generateReport(sessionId, topic, documentIds = []) {
+  return apiPost('/api/v1/research/generate', {
+    session_id: sessionId,
+    topic,
+    document_ids: documentIds,
+  });
 }
 
 async function getReport(sessionId, reportId) {
@@ -176,12 +252,29 @@ async function listReports(sessionId) {
   return apiGet(`/api/v1/research/${sessionId}/reports`);
 }
 
-function reportDownloadUrl(sessionId, reportId) {
-  return `${window.API_BASE}/api/v1/report/${encodeURIComponent(sessionId)}/${reportId}/download`;
+async function downloadReport(sessionId, reportId) {
+  const path = `/api/v1/report/${encodeURIComponent(sessionId)}/${reportId}/download`;
+  const response = await apiFetch(path);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || `Download error ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const disposition = response.headers.get('Content-Disposition') || '';
+  const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = filenameMatch ? filenameMatch[1] : `market-research-${reportId}.pdf`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(objectUrl);
 }
 
 async function* chatStream(sessionId, message) {
-  const res = await fetch(window.API_BASE + '/api/v1/chat/stream', {
+  const res = await apiFetch('/api/v1/chat/stream', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId, message }),
@@ -215,14 +308,16 @@ async function clearChatHistory(sessionId) {
 
 window.API = {
   getSessionId,
+  startSession,
   checkHealth,
   listDocuments,
   uploadDocument,
   deleteDocument,
+  generateDocumentBrief,
   generateReport,
   getReport,
   listReports,
-  reportDownloadUrl,
+  downloadReport,
   chatStream,
   getChatHistory,
   clearChatHistory,

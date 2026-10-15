@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -26,6 +26,8 @@ class DocumentResponse(BaseModel):
     file_size_kb: Optional[float]
     chunk_count: int
     indexed: bool
+    brief: Optional[str] = None
+    brief_status: str = "pending"
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -36,6 +38,7 @@ class DocumentResponse(BaseModel):
 class ResearchRequest(BaseModel):
     session_id: str = Field(min_length=1, max_length=64)
     topic: str = Field(min_length=3, max_length=255)
+    document_ids: Optional[List[int]] = Field(default=None, max_length=50)
 
 
 class CompetitorInfo(BaseModel):
@@ -104,12 +107,16 @@ class ChatResponse(BaseModel):
     role: str = "assistant"
     content: str
     sources: List[SourceCitation] = Field(default_factory=list)
+    answer_mode: Literal[
+        "documents", "general_market_knowledge", "report_irrelevant", "out_of_scope"
+    ] = "documents"
 
 
 class ChatHistoryResponse(BaseModel):
     role: str
     content: str
     sources: Optional[List[Dict[str, Any]]]
+    answer_mode: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -119,10 +126,19 @@ class ChatHistoryResponse(BaseModel):
 
 class UploadResponse(BaseModel):
     session_id: str
+    document_id: int
     filename: str
     file_type: str
     chunk_count: int
+    brief: Optional[str] = None
+    brief_status: Literal["pending", "ready", "unavailable"] = "pending"
     message: str
+
+
+class DocumentBriefResponse(BaseModel):
+    document_id: int
+    brief: Optional[str] = None
+    brief_status: Literal["pending", "ready", "unavailable"]
 
 
 # ── Generic ──────────────────────────────────────────────────────────────────

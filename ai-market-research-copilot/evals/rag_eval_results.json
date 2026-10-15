@@ -1,15 +1,16 @@
 {
-  "generated_at": "2026-08-01T06:46:29.387213+00:00",
+  "generated_at": "2026-09-13T15:54:41.326391+00:00",
   "dataset": "rag_eval_dataset.json",
+  "embedding_provider": "local",
   "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
   "top_k": 3,
   "retrieval_summary": {
-    "cases": 3,
+    "cases": 6,
     "mean_recall_at_k": 1.0,
     "mean_hit_at_k": 1.0
   },
   "answer_summary": {
-    "cases": 3,
+    "cases": 6,
     "mean_faithfulness": 1.0,
     "mean_citation_precision": 1.0,
     "mean_citation_recall": 1.0
@@ -80,10 +81,76 @@
         "citation_precision": 1.0,
         "citation_recall": 1.0
       }
+    },
+    {
+      "id": "adoption-segments",
+      "question": "Which customer segments show the strongest adoption?",
+      "retrieved_chunk_ids": [
+        "market_report.pdf::1",
+        "buyer_interviews.txt::0",
+        "buyer_interviews.txt::1"
+      ],
+      "retrieval": {
+        "k": 3,
+        "retrieved": 3,
+        "relevant": 1,
+        "matched": 1,
+        "recall_at_k": 1.0,
+        "hit_at_k": 1.0
+      },
+      "answer": {
+        "faithfulness": 1.0,
+        "citation_precision": 1.0,
+        "citation_recall": 1.0
+      }
+    },
+    {
+      "id": "fireflies-plan-pricing",
+      "question": "What are the Fireflies Pro and Business monthly prices?",
+      "retrieved_chunk_ids": [
+        "competitor_pricing.md::1",
+        "competitor_pricing.md::0",
+        "market_report.pdf::0"
+      ],
+      "retrieval": {
+        "k": 3,
+        "retrieved": 3,
+        "relevant": 1,
+        "matched": 1,
+        "recall_at_k": 1.0,
+        "hit_at_k": 1.0
+      },
+      "answer": {
+        "faithfulness": 1.0,
+        "citation_precision": 1.0,
+        "citation_recall": 1.0
+      }
+    },
+    {
+      "id": "buyer-adoption-barrier",
+      "question": "What is the most common buyer adoption barrier?",
+      "retrieved_chunk_ids": [
+        "buyer_interviews.txt::1",
+        "market_report.pdf::1",
+        "buyer_interviews.txt::0"
+      ],
+      "retrieval": {
+        "k": 3,
+        "retrieved": 3,
+        "relevant": 1,
+        "matched": 1,
+        "recall_at_k": 1.0,
+        "hit_at_k": 1.0
+      },
+      "answer": {
+        "faithfulness": 1.0,
+        "citation_precision": 1.0,
+        "citation_recall": 1.0
+      }
     }
   ],
   "methodology": {
-    "retrieval": "Cosine similarity over the production local embedding model.",
+    "retrieval": "Cosine similarity over the production local embedding model (sentence-transformers/all-MiniLM-L6-v2).",
     "faithfulness": "Deterministic claim-token support heuristic over retrieved contexts.",
     "citations": "Exact relevant chunk identity precision and recall."
   }

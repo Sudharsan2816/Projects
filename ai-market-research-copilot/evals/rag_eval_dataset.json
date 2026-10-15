@@ -61,6 +61,27 @@
       "relevant_chunk_ids": ["buyer_interviews.txt::0"],
       "reference_answer": "Buyers prioritize transcript accuracy, retention controls, CRM integrations, and reliable speaker identification.",
       "citations": [{"chunk_id": "buyer_interviews.txt::0"}]
+    },
+    {
+      "id": "adoption-segments",
+      "question": "Which customer segments show the strongest adoption?",
+      "relevant_chunk_ids": ["market_report.pdf::1"],
+      "reference_answer": "Adoption is strongest among remote teams, consulting firms, and sales organizations.",
+      "citations": [{"chunk_id": "market_report.pdf::1"}]
+    },
+    {
+      "id": "fireflies-plan-pricing",
+      "question": "What are the Fireflies Pro and Business monthly prices?",
+      "relevant_chunk_ids": ["competitor_pricing.md::1"],
+      "reference_answer": "Fireflies Pro is near USD 18 per seat monthly and Business is near USD 29 per seat monthly.",
+      "citations": [{"chunk_id": "competitor_pricing.md::1"}]
+    },
+    {
+      "id": "buyer-adoption-barrier",
+      "question": "What is the most common buyer adoption barrier?",
+      "relevant_chunk_ids": ["buyer_interviews.txt::1"],
+      "reference_answer": "The most common barrier is concern about recording consent and storing confidential meeting content.",
+      "citations": [{"chunk_id": "buyer_interviews.txt::1"}]
     }
   ]
 }

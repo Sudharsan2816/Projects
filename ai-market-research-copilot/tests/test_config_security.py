@@ -26,3 +26,18 @@ def test_wildcard_cors_disables_credentials_even_if_requested():
 
     assert settings.cors_origins == ["*"]
     assert settings.cors_allow_credentials is False
+
+
+def test_vercel_uses_writable_temporary_storage(monkeypatch, tmp_path):
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setenv("TMPDIR", str(tmp_path))
+
+    settings = Settings(_env_file=None)
+    runtime_root = tmp_path / "market-research-copilot"
+
+    assert settings.UPLOAD_DIR == runtime_root / "data" / "uploads"
+    assert settings.INDEX_DIR == runtime_root / "data" / "indexes"
+    assert settings.DB_DIR == runtime_root / "data" / "db"
+    assert settings.REPORTS_DIR == runtime_root / "reports"
+    assert settings.MODEL_CACHE_DIR == runtime_root / "data" / "model_cache"
+    assert settings.DATABASE_URL == f"sqlite:///{runtime_root / 'data' / 'db' / 'app.db'}"

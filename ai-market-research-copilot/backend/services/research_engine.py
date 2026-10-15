@@ -44,34 +44,70 @@ def _parse_json_safe(raw: str, kind: str = "array"):
         return None
 
 
-def _has_documents(session_id: str) -> bool:
+def _has_documents(
+    session_id: str,
+    source_filenames: list[str] | None = None,
+) -> bool:
     store = FAISSVectorStore(session_id)
-    return store.total_vectors() > 0
+    return store.total_vectors(source_filenames) > 0
 
 
-def _query(session_id: str, prompt: str, web_context: str = "") -> str:
+def _build_optional_web_context(
+    session_id: str,
+    topic: str,
+    section: str,
+    source_filenames: list[str] | None,
+) -> str:
+    """Keep document-scoped reports grounded only in their selected sources."""
+    if _has_documents(session_id, source_filenames):
+        return ""
+    return build_web_context(topic, section)
+
+
+def _query(
+    session_id: str,
+    prompt: str,
+    web_context: str = "",
+    source_filenames: list[str] | None = None,
+) -> str:
     """Run prompt through RAG (if docs exist) or LLM, with optional web grounding."""
-    has_docs = _has_documents(session_id)
+    has_docs = _has_documents(session_id, source_filenames)
     full_prompt = f"{web_context}\n\n{prompt}" if web_context else prompt
     system = SYSTEM if has_docs else SYSTEM + _GUARDRAIL
 
     if has_docs:
-        answer, _ = rag_query(session_id, full_prompt, system_prompt=system)
+        answer, _ = rag_query(
+            session_id,
+            full_prompt,
+            system_prompt=system,
+            source_filenames=source_filenames,
+        )
     else:
         answer = generate(full_prompt, system)
     return answer
 
 
-def _llm_json(session_id: str, prompt: str, kind: str = "array",
-              web_context: str = "", retries: int = 2):
+def _llm_json(
+    session_id: str,
+    prompt: str,
+    kind: str = "array",
+    web_context: str = "",
+    retries: int = 2,
+    source_filenames: list[str] | None = None,
+):
     """Run prompt with grounding + guardrails, parse JSON, retry on failure."""
-    has_docs = _has_documents(session_id)
+    has_docs = _has_documents(session_id, source_filenames)
     system = SYSTEM if has_docs else SYSTEM + _GUARDRAIL
     full_prompt = f"{web_context}\n\n{prompt}" if web_context else prompt
 
     for attempt in range(retries + 1):
         if has_docs:
-            raw, _ = rag_query(session_id, full_prompt, system_prompt=system)
+            raw, _ = rag_query(
+                session_id,
+                full_prompt,
+                system_prompt=system,
+                source_filenames=source_filenames,
+            )
         else:
             raw = generate(full_prompt, system)
         result = _parse_json_safe(raw, kind)
@@ -84,8 +120,14 @@ def _llm_json(session_id: str, prompt: str, kind: str = "array",
 
 # ── Executive Summary ─────────────────────────────────────────────────────────
 
-def generate_executive_summary(session_id: str, topic: str) -> str:
-    web_ctx = build_web_context(topic, "summary")
+def generate_executive_summary(
+    session_id: str,
+    topic: str,
+    source_filenames: list[str] | None = None,
+) -> str:
+    web_ctx = _build_optional_web_context(
+        session_id, topic, "summary", source_filenames
+    )
     q = f"""Write a concise executive summary (3-4 paragraphs) for a market research report on:
 Topic: {topic}
 
@@ -96,13 +138,19 @@ Include:
 - Strategic outlook
 
 Do not use placeholder text like [Current Year]. Use specific years (2024, 2025, etc.)."""
-    return _query(session_id, q, web_ctx)
+    return _query(session_id, q, web_ctx, source_filenames)
 
 
 # ── Competitors ───────────────────────────────────────────────────────────────
 
-def extract_competitors(session_id: str, topic: str) -> list:
-    web_ctx = build_web_context(topic, "competitors")
+def extract_competitors(
+    session_id: str,
+    topic: str,
+    source_filenames: list[str] | None = None,
+) -> list:
+    web_ctx = _build_optional_web_context(
+        session_id, topic, "competitors", source_filenames
+    )
     q = f"""Identify and analyze the top 5 real, verified competitors in the {topic} market.
 
 Only include companies that actually exist and operate in this market.
@@ -118,7 +166,13 @@ Return a JSON array. Each item must have:
 
 Return ONLY the JSON array."""
 
-    result = _llm_json(session_id, q, "array", web_ctx)
+    result = _llm_json(
+        session_id,
+        q,
+        "array",
+        web_ctx,
+        source_filenames=source_filenames,
+    )
     if result:
         return result
     logger.error(f"[{session_id}] Competitor JSON parse failed after retries")
@@ -127,8 +181,14 @@ Return ONLY the JSON array."""
 
 # ── Pricing Insights ──────────────────────────────────────────────────────────
 
-def extract_pricing_insights(session_id: str, topic: str) -> list:
-    web_ctx = build_web_context(topic, "pricing")
+def extract_pricing_insights(
+    session_id: str,
+    topic: str,
+    source_filenames: list[str] | None = None,
+) -> list:
+    web_ctx = _build_optional_web_context(
+        session_id, topic, "pricing", source_filenames
+    )
     q = f"""Analyze pricing strategies and price points in the {topic} market.
 
 Use Rs. instead of the rupee symbol. Only state price ranges you are confident about.
@@ -144,7 +204,13 @@ Return a JSON array. Each item must have:
 
 Return ONLY the JSON array."""
 
-    result = _llm_json(session_id, q, "array", web_ctx)
+    result = _llm_json(
+        session_id,
+        q,
+        "array",
+        web_ctx,
+        source_filenames=source_filenames,
+    )
     if result:
         return result
     logger.error(f"[{session_id}] Pricing JSON parse failed after retries")
@@ -153,8 +219,14 @@ Return ONLY the JSON array."""
 
 # ── Market Trends ─────────────────────────────────────────────────────────────
 
-def extract_market_trends(session_id: str, topic: str) -> list:
-    web_ctx = build_web_context(topic, "trends")
+def extract_market_trends(
+    session_id: str,
+    topic: str,
+    source_filenames: list[str] | None = None,
+) -> list:
+    web_ctx = _build_optional_web_context(
+        session_id, topic, "trends", source_filenames
+    )
     q = f"""Identify the top 5 market trends shaping the {topic} market in 2024-2025.
 
 Base your answer on real, verifiable trends. Do not invent trends.
@@ -169,7 +241,13 @@ Return a JSON array. Each item must have:
 
 Return ONLY the JSON array."""
 
-    result = _llm_json(session_id, q, "array", web_ctx)
+    result = _llm_json(
+        session_id,
+        q,
+        "array",
+        web_ctx,
+        source_filenames=source_filenames,
+    )
     if result:
         return result
     logger.error(f"[{session_id}] Trends JSON parse failed after retries")
@@ -178,8 +256,14 @@ Return ONLY the JSON array."""
 
 # ── SWOT Analysis ─────────────────────────────────────────────────────────────
 
-def generate_swot(session_id: str, topic: str) -> dict:
-    web_ctx = build_web_context(topic, "swot")
+def generate_swot(
+    session_id: str,
+    topic: str,
+    source_filenames: list[str] | None = None,
+) -> dict:
+    web_ctx = _build_optional_web_context(
+        session_id, topic, "swot", source_filenames
+    )
     q = f"""Perform a SWOT analysis for a new entrant in the {topic} market.
 
 Base each point on real market conditions. Do not fabricate statistics.
@@ -194,7 +278,13 @@ Return a JSON object with exactly this structure:
 
 Return ONLY the JSON object."""
 
-    result = _llm_json(session_id, q, "object", web_ctx)
+    result = _llm_json(
+        session_id,
+        q,
+        "object",
+        web_ctx,
+        source_filenames=source_filenames,
+    )
     if result:
         return result
     logger.error(f"[{session_id}] SWOT JSON parse failed after retries")
@@ -207,11 +297,18 @@ def generate_full_report(
     session_id: str,
     topic: str,
     on_progress: Callable[[int, str], None] | None = None,
+    source_filenames: list[str] | None = None,
 ) -> dict:
     """Orchestrate all research sections and return combined dict."""
     logger.info(f"[{session_id}] Generating full report for topic: {topic}")
-    has_docs = _has_documents(session_id)
-    data_source = "uploaded_documents" if has_docs else "web_search+llm"
+    has_docs = _has_documents(session_id, source_filenames)
+    data_source = (
+        "selected_documents"
+        if has_docs and source_filenames
+        else "uploaded_documents"
+        if has_docs
+        else "web_search+llm"
+    )
     logger.info(f"[{session_id}] Data source: {data_source}")
 
     def progress(value: int, stage: str) -> None:
@@ -219,15 +316,15 @@ def generate_full_report(
             on_progress(value, stage)
 
     progress(8, "Preparing sources")
-    summary = generate_executive_summary(session_id, topic)
+    summary = generate_executive_summary(session_id, topic, source_filenames)
     progress(24, "Executive summary complete")
-    competitors = extract_competitors(session_id, topic)
+    competitors = extract_competitors(session_id, topic, source_filenames)
     progress(42, "Competitor analysis complete")
-    pricing = extract_pricing_insights(session_id, topic)
+    pricing = extract_pricing_insights(session_id, topic, source_filenames)
     progress(58, "Pricing analysis complete")
-    trends = extract_market_trends(session_id, topic)
+    trends = extract_market_trends(session_id, topic, source_filenames)
     progress(74, "Trend analysis complete")
-    swot = generate_swot(session_id, topic)
+    swot = generate_swot(session_id, topic, source_filenames)
     progress(88, "SWOT analysis complete")
 
     return {
