@@ -2,7 +2,7 @@
 
 Full-stack RAG application for market research workflows. Users can upload documents, generate structured market reports, and ask grounded questions over uploaded content.
 
-This is the strongest AI/backend project in this portfolio because it combines API design, document parsing, embeddings, vector search, LLM orchestration, persistence, reporting, and containerized local deployment.
+It combines API design, document parsing, embeddings, vector search, LLM orchestration, persistence, reporting, and containerized local deployment.
 
 ## What It Does
 
@@ -118,9 +118,9 @@ python -m scripts.check_llm_providers --provider nvidia
 Fallbacks are disabled by default. To enable them later, set a comma-separated list such as
 `LLM_FALLBACK_PROVIDERS=gemini,ollama`.
 
-## Recruiter Notes
+## Engineering Highlights
 
-This project demonstrates:
+This project covers:
 
 - Building an AI application beyond a notebook.
 - Designing FastAPI routes around asynchronous report generation.

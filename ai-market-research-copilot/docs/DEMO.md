@@ -1,6 +1,6 @@
 # Market Research Copilot Demo
 
-This runbook produces a repeatable five-minute recruiter demo with one configured LLM provider.
+This runbook produces a repeatable five-minute demo with one configured LLM provider.
 
 ## Start
 
@@ -16,7 +16,7 @@ For a local Python run, start the application with `python -m uvicorn backend.ma
 
 Confirm provider connectivity first with `python -m scripts.check_llm_providers`.
 
-## Recruiter walkthrough
+## Walkthrough
 
 1. Create a research session and upload a small PDF, CSV, or text document.
 2. Ask a question answered by the source and show the returned citations.
